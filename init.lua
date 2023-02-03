@@ -680,7 +680,7 @@ function automata.new_pattern(pname, offsets, rule_override)
 		return false 
 	end
 end
-local function is_valide_content_id(node_type)
+local function is_valid_content_id(node_type)
 	local list = {}
 	--generate a list of all registered nodes that are simple blocks
 	for name, def in pairs(minetest.registered_nodes) do
@@ -714,12 +714,12 @@ function automata.rules_validate(pname, rule_override)
 	--trail
 	local trail = automata.get_player_setting(pname, "trail")
     if not trail then rules.trail = "air" 
-	elseif trail == "RAINBOW" or is_valide_content_id(trail) then rules.trail = trail
+	elseif trail == "RAINBOW" or is_valid_content_id(trail) then rules.trail = trail
 	else automata.show_popup(pname, trail.." is not a valid trail block type") return false end
 	--final
 	local final = automata.get_player_setting(pname, "final")
 	if not final then rules.final = rules.trail 
-	elseif is_valide_content_id(final) then rules.final = final
+	elseif is_valid_content_id(final) then rules.final = final
 	else automata.show_popup(pname, final.." is not a valid final block type") return false end
 	--destructive
 	local destruct = automata.get_player_setting(pname, "destruct")
