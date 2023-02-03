@@ -680,6 +680,26 @@ function automata.new_pattern(pname, offsets, rule_override)
 		return false 
 	end
 end
+local function is_valide_content_id(node_type)
+	local list = {}
+	--generate a list of all registered nodes that are simple blocks
+	for name, def in pairs(minetest.registered_nodes) do
+		if def.drawtype == "normal" and string.sub(name, 1, 9) ~= "automata:" then
+			table.insert(list, name)
+		end
+	end
+	--add water and lava
+	table.insert(list, "realterrain:water_static")
+	table.insert(list, "default:water_source")
+	table.insert(list, "default:lava_source")
+	
+    for k,v in pairs(list) do
+        if v == node_type then
+            return true
+        end
+    end
+    return false
+end
 -- called when new pattern is created
 function automata.rules_validate(pname, rule_override)
 	local rules = {}
@@ -693,13 +713,13 @@ function automata.rules_validate(pname, rule_override)
 	else automata.show_popup(pname, "Generations must be between 1 and 1000-- you said: "..gens) return false end
 	--trail
 	local trail = automata.get_player_setting(pname, "trail")
-	if not trail then rules.trail = "air" 
-	elseif trail == "RAINBOW" or minetest.get_content_id(trail) ~= 127 then rules.trail = trail
+    if not trail then rules.trail = "air" 
+	elseif trail == "RAINBOW" or is_valide_content_id(trail) then rules.trail = trail
 	else automata.show_popup(pname, trail.." is not a valid trail block type") return false end
 	--final
 	local final = automata.get_player_setting(pname, "final")
 	if not final then rules.final = rules.trail 
-	elseif minetest.get_content_id(final) ~= 127 then rules.final = final
+	elseif is_valide_content_id(final) then rules.final = final
 	else automata.show_popup(pname, final.." is not a valid final block type") return false end
 	--destructive
 	local destruct = automata.get_player_setting(pname, "destruct")
