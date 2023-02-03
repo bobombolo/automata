@@ -688,10 +688,6 @@ local function is_valid_content_id(node_type)
 			table.insert(list, name)
 		end
 	end
-	--add water and lava
-	table.insert(list, "realterrain:water_static")
-	table.insert(list, "default:water_source")
-	table.insert(list, "default:lava_source")
 	
     for k,v in pairs(list) do
         if v == node_type then
