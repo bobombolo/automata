@@ -1065,7 +1065,7 @@ function automata.show_rc_form(pname)
 								"label[0,0;You are at x= "..math.floor(ppos.x)..
 								" y= "..math.floor(ppos.y).." z= "..math.floor(ppos.z).." and mostly facing "..dir.."]"
 	--1D, 2D, 3D, Import
-	local f_grow_settings = 	"field[1,5;4,1;trail;Trail Block (eg: dirt);"..minetest.formspec_escape(trail).."]" ..
+	local f_grow_settings = 	"field[1,5;4,1;trail;Trail Block (eg: default:dirt);"..minetest.formspec_escape(trail).."]" ..
 								"field[1,6;4,1;final;Final Block (eg: default:mese);"..minetest.formspec_escape(final).."]" ..
 								"checkbox[0.7,7.5;destruct;Destructive?;"..destruct.."]"..
 								"field[1,7;4,1;gens;Generations (eg: 30);"..minetest.formspec_escape(gens).."]"
