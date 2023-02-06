@@ -605,7 +605,7 @@ function automata.new_pattern(pname, offsets, rule_override)
 		--are we being supplied with a list of offsets? (single or import lif)
 		if offsets then
 			local player = minetest.get_player_by_name(pname)
-			local ppos = player:getpos()
+			local ppos = player:get_pos()
 			ppos = {x=math.floor(ppos.x), y=math.floor(ppos.y), z=math.floor(ppos.z)} --remove decimals
 			--minetest.log("action", "rules: "..dump(rules))
 			for k,offset in next, offsets do
@@ -1030,8 +1030,8 @@ end
 -- show the main remote control form
 function automata.show_rc_form(pname)
 	local player = minetest.get_player_by_name(pname)
-	local ppos = player:getpos()
-	local degree = player:get_look_yaw()*180/math.pi - 90
+	local ppos = player:get_pos()
+	local degree = player:get_look_horizontal()*180/math.pi - 90
 	if degree < 0 then degree = degree + 360 end
 	local dir
 	if     degree <= 45 or degree > 315 then dir = "+ Z"
