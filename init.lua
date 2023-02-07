@@ -1202,7 +1202,8 @@ function automata.show_rc_form(pname)
 				patterns = 	patterns..","..minetest.formspec_escape(k
 							.." ["..v.status.."] gen:"..v.iteration.." cells:"
 							..v.cell_count.." time:"..math.ceil(v.t_timer).."ms min:"
-							..pmin.x.."."..pmin.y.."."..(pmin.z or "nil").." max:"..pmax.x.."."..pmax.y.."."..(pmax.z or "nil") )
+							..(pmin.x or "nil").."."..(pmin.yor "nil").."."..(pmin.z or "nil")
+							.." max:"..(pmax.x or "nil").."."..(pmax.y or nil).."."..(pmax.z or "nil") )
 				automata.open_tab5[pname][i]=k --need this table to decode the form's pid_ids back to pattern_ids
 			end
 		end
