@@ -680,7 +680,7 @@ function automata.new_pattern(pname, offsets, rule_override)
 		return false 
 	end
 end
-local function automata.is_valid_content_id(node_type)
+function automata.is_valid_content_id(node_type)
 	local list = {}
 	--generate a list of all registered nodes that are simple blocks
 	for name, def in pairs(minetest.registered_nodes) do
