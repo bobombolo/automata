@@ -694,7 +694,7 @@ function automata.is_valid_content_id(node_type)
             return true
         end
     end
-    print(dump(list))
+    --print(dump(list))
     return false
 end
 -- called when new pattern is created
