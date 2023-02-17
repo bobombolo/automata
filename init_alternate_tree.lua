@@ -219,7 +219,8 @@ function automata.grow(pattern_id, pname)
 	local iteration = automata.patterns[pattern_id].iteration +1
 	local death_list ={} --cells that will be set to rules.trail at the end of grow()
 	local birth_list = {} --cells that will be set to automata:active at the end of grow()
-	local empty_neighbors = {} --non-active neighbor cell list to be tested for births
+    local leaves_list = {} -- cells that will become leaves in tree mode at the end of grow()	
+    local empty_neighbors = {} --non-active neighbor cell list to be tested for births
 	local cell_count = 0 --since the indexes is keyed by vi, can't do #indexes
 	local xmin,ymin,zmin,xmax,ymax,zmax --for the new pmin and pmax -- used to pace grow()
 	--load the rules
@@ -245,6 +246,7 @@ function automata.grow(pattern_id, pname)
 	end
 	local c_air      = minetest.get_content_id("air")
 	local c_automata = minetest.get_content_id("automata:active")
+    local c_leaves = minetest.get_content_id("default:leaves")
 	--create a voxelManipulator instance
 	local vm = minetest.get_voxel_manip()
 	--expand the voxel extent by neighbors and growth beyond last pmin and pmax
@@ -518,7 +520,7 @@ function automata.grow(pattern_id, pname)
         -- tests all empty_neighbors against remaining rules.birth or code1d[2,5,6]
 	    for epos_vi, epos in next, empty_neighbors do
 		    local birth = false
-		    
+		    local leaves = false
 		    --CELL BIRTH TESTING:
 		    
 		    local same_count = 0
@@ -574,7 +576,10 @@ function automata.grow(pattern_id, pname)
                 birth = true
             end
 
-
+            --leaves
+            if birth == false and epos.y - base > 20 and chance < 0.5 then
+               leaves = true
+            end
 
 
 		    if birth then
@@ -590,6 +595,21 @@ function automata.grow(pattern_id, pname)
 			    local bpos = {x=epos.x+growth_offset.x, y=epos.y+growth_offset.y, z=epos.z+growth_offset.z}
 			    birth_list[bpos_vi] = bpos --when node is actually set we will add to new_indexes
 		    end
+
+            if leaves then
+                --only if leaves happens convert old_index to new_index
+			    local new_epos_vi
+			    if same_extent then
+				    new_epos_vi = epos_vi
+			    else
+				    new_epos_vi = new_area:indexp(epos)
+			    end
+			    --add to birth list
+			    local lpos_vi = new_epos_vi + growth_vi
+			    local lpos = {x=epos.x+growth_offset.x, y=epos.y+growth_offset.y, z=epos.z+growth_offset.z}
+			    leaves_list[lpos_vi] = lpos --when node is actually set we will add to new_indexes
+
+            end
 	    end
         
 
@@ -747,7 +767,7 @@ function automata.grow(pattern_id, pname)
 	--apply births to data[]
 	for bpos_vi, bpos in next, birth_list do
 		--test for destructive mode and if the node is occupied
-		if rules.destruct == "true" or data[bpos_vi] == c_air then
+		if rules.destruct == "true" or data[bpos_vi] == c_air or data[bpos_vi] == c_leaves then
 			--test for final iteration
 			if is_final == 1 then data[bpos_vi] = c_final
 			else data[bpos_vi] = c_automata
@@ -756,6 +776,14 @@ function automata.grow(pattern_id, pname)
 			add_to_new_cell_list(bpos_vi, bpos)
 		end
 	end
+    --set leaves
+    for bpos_vi, bpos in next, leaves_list do
+		--test for destructive mode and if the node is occupied
+		if rules.destruct == "true" or data[bpos_vi] == c_air then
+			data[bpos_vi] = c_leaves
+	    end
+	end
+    
 	vm:set_data(data)
 	vm:write_to_map()
 	vm:update_map()
