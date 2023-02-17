@@ -768,7 +768,7 @@ function automata.grow(pattern_id, pname)
 	--apply births to data[]
 	for bpos_vi, bpos in next, birth_list do
 		--test for destructive mode and if the node is occupied
-		if rules.destruct == "true" or data[bpos_vi] == c_air or data[bpos_vi] == c_leaves then
+		if rules.destruct == "true" or data[bpos_vi] == c_air or data[bpos_vi] == c_leaves or data[bpos_vi] == c_apple then
 			--test for final iteration
 			if is_final == 1 then data[bpos_vi] = c_final
 			else data[bpos_vi] = c_automata
