@@ -247,6 +247,7 @@ function automata.grow(pattern_id, pname)
 	local c_air      = minetest.get_content_id("air")
 	local c_automata = minetest.get_content_id("automata:active")
     local c_leaves = minetest.get_content_id("default:leaves")
+    local c_apple = minetest.get_content_id("default:apple")
 	--create a voxelManipulator instance
 	local vm = minetest.get_voxel_manip()
 	--expand the voxel extent by neighbors and growth beyond last pmin and pmax
@@ -777,10 +778,14 @@ function automata.grow(pattern_id, pname)
 		end
 	end
     --set leaves
-    for bpos_vi, bpos in next, leaves_list do
+    for lpos_vi, bpos in next, leaves_list do
 		--test for destructive mode and if the node is occupied
-		if rules.destruct == "true" or data[bpos_vi] == c_air then
-			data[bpos_vi] = c_leaves
+		if rules.destruct == "true" or data[lpos_vi] == c_air then
+			if math.random() < 0.1 then
+                data[lpos_vi] = c_apple
+            else
+                data[lpos_vi] = c_leaves
+            end
 	    end
 	end
     
@@ -904,7 +909,7 @@ function automata.is_valid_content_id(node_type)
 	local list = {}
 	--generate a list of all registered nodes that are simple blocks
 	for name, def in pairs(minetest.registered_nodes) do
-		if def.drawtype == "normal" and string.sub(name, 1, 9) ~= "automata:" then
+        if def.drawtype == "normal" and string.sub(name, 1, 9) ~= "automata:" then
 			table.insert(list, name)
 		end
 	end
