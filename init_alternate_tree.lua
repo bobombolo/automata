@@ -410,12 +410,8 @@ function automata.grow(pattern_id, pname)
 	local growth_vi = (growth_offset.z * new_ystride * new_xstride)
 					+ (growth_offset.y * new_xstride) 
 					+  growth_offset.x
-	
-
-
     if rules.tree then --tree stuff
-        --in tree mode everything survives
-        
+        --in tree mode everything survives by default
 	    for old_pos_vi, pos in next, old_indexes do		
 		    local survival = true
 		    --we need to convert the old index to the new index regardless of survival/death
@@ -427,7 +423,6 @@ function automata.grow(pattern_id, pname)
 		    end	
 		    
 		    --CELL SURVIVAL TESTING
-		    
 		    local same_count = 0
 		    for k, vi_offset in next, neighborhood_vis do
 			    --add the neighbor offsets to the position
@@ -441,9 +436,6 @@ function automata.grow(pattern_id, pname)
 										     z=pos.z+neighborhood[k].z}
 			    end
 		    end
-            		    
-            --now we have a same neighbor count
-            --if same_count > 5 then survival = false end
 		    local north = neighborhood_vis.n + old_pos_vi
             local south = neighborhood_vis.s + old_pos_vi
             local east = neighborhood_vis.e + old_pos_vi
@@ -462,7 +454,7 @@ function automata.grow(pattern_id, pname)
             local topeast = neighborhood_vis.te + old_pos_vi
             local topsouth = neighborhood_vis.ts + old_pos_vi
             local topwest = neighborhood_vis.tw + old_pos_vi
-            
+            --the following survival rules eliminate stair-stepping 
             if old_indexes[northwest] and old_indexes[southeast] and old_indexes[northeast] and old_indexes[east]
             and old_indexes[north] and same_count == 5 then
                 survival = false
@@ -516,7 +508,6 @@ function automata.grow(pattern_id, pname)
 			    death_list[new_pos_vi] = pos
 		    end
 	    end
-	    
         --BIRTH testing for trees
         -- tests all empty_neighbors against remaining rules.birth or code1d[2,5,6]
 	    for epos_vi, epos in next, empty_neighbors do
@@ -546,43 +537,45 @@ function automata.grow(pattern_id, pname)
             local west = neighborhood_vis.w + epos_vi
             
             --if this block is on the top face of another block then it has a chance of growing
-            if old_indexes[bottom] and same_count == 1 and chance < 0.5 then
+            if old_indexes[bottom] and same_count == 1 and chance < rules.up_branch_chance then
                 birth = true
-			elseif old_indexes[bottom] and chance < 0.01 then
+			elseif old_indexes[bottom] and chance < rules.up_bud_chance then
                 birth = true
             end
-            if old_indexes[north] and same_count == 1 and epos.y - base > 20 and chance < 0.5 then
+            if old_indexes[north] and same_count == 1 and epos.y - base > rules.side_branch_height 
+            and chance < rules.side_branch_chance then
                 birth = true
-			elseif old_indexes[north] and iter > 15 and chance < 0.01 then    
+			elseif old_indexes[north] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then    
             birth = true
             end
-            if old_indexes[south] and same_count == 1 and epos.y - base > 20 and chance < 0.5 then
+            if old_indexes[south] and same_count == 1 and epos.y - base > rules.side_branch_height
+            and chance < rules.side_branch_chance then
                 birth = true
-            elseif old_indexes[south] and iter > 15 and chance < 0.01 then
-                birth = true
-			end
-            if old_indexes[east] and same_count == 1 and epos.y - base > 20 and chance < 0.5 then
-                birth = true
-            elseif old_indexes[east] and iter > 15 and chance < 0.01 then
+            elseif old_indexes[south] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then
                 birth = true
 			end
-            if old_indexes[west] and same_count == 1 and epos.y - base > 20 and chance < 0.5 then
+            if old_indexes[east] and same_count == 1 and epos.y - base > rules.side_branch_height
+            and chance < rules.side_branch_chance then
                 birth = true
-            elseif old_indexes[west] and iter > 15 and chance < 0.01 then
+            elseif old_indexes[east] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then
                 birth = true
 			end
-            if old_indexes[top] and same_count == 1 and epos.y - base < 5 and chance < 0.5 then
+            if old_indexes[west] and same_count == 1 and epos.y - base > rules.side_branch_height
+            and chance < rules.side_branch_chance then
                 birth = true
-            elseif old_indexes[top] and chance < 0.01 then
+            elseif old_indexes[west] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then
+                birth = true
+			end
+            if old_indexes[top] and same_count == 1 and epos.y - base < rules.down_branch_height
+            and chance < rules.down_branch_chance then
+                birth = true
+            elseif old_indexes[top] and chance < rules.down_bud_chance then
                 birth = true
             end
-
             --leaves
-            if birth == false and epos.y - base > 20 and chance < 0.5 then
+            if birth == false and epos.y - base > rules.leaf_height and chance < rules.leaf_chance then
                leaves = true
             end
-
-
 		    if birth then
 			    --only if birth happens convert old_index to new_index
 			    local new_epos_vi
@@ -596,7 +589,6 @@ function automata.grow(pattern_id, pname)
 			    local bpos = {x=epos.x+growth_offset.x, y=epos.y+growth_offset.y, z=epos.z+growth_offset.z}
 			    birth_list[bpos_vi] = bpos --when node is actually set we will add to new_indexes
 		    end
-
             if leaves then
                 --only if leaves happens convert old_index to new_index
 			    local new_epos_vi
@@ -612,12 +604,6 @@ function automata.grow(pattern_id, pname)
 
             end
 	    end
-        
-
-
-
-
-
     else --non-tree stuff
         --CELL SURVIVAL TESTING LOOP: tests all old_indexes against rules.survival or code1d[3,4,7,8]
 	    for old_pos_vi, pos in next, old_indexes do		
@@ -781,7 +767,7 @@ function automata.grow(pattern_id, pname)
     for lpos_vi, bpos in next, leaves_list do
 		--test for destructive mode and if the node is occupied
 		if rules.destruct == "true" or data[lpos_vi] == c_air then
-			if math.random() < 0.1 then
+			if math.random() < rules.fruit_chance then
                 data[lpos_vi] = c_apple
             else
                 data[lpos_vi] = c_leaves
@@ -997,6 +983,54 @@ function automata.rules_validate(pname, rule_override)
         rules.birth = {}
         rules.survive = {}
         rules.tree = true
+        local up_bud_chance = automata.get_player_setting(pname, "up_bud_chance")
+        if not up_bud_chance then rules.up_bud_chance = 0.01
+	    elseif tonumber(up_bud_chance) >= 0 and tonumber(up_bud_chance) <= 1 then rules.up_bud_chance = tonumber(up_bud_chance)
+	    else automata.show_popup(pname, "Up bud chance must be between 0 and 1 -- you said: "..up_bud_chance) return false end
+        local up_branch_chance = automata.get_player_setting(pname, "up_branch_chance")
+        if not up_branch_chance then rules.up_branch_chance = 0.5
+	    elseif tonumber(up_branch_chance) >= 0 and tonumber(up_branch_chance) <= 1 then rules.up_branch_chance = tonumber(up_branch_chance)
+	    else automata.show_popup(pname, "Up branch chance must be between 0 and 1 -- you said: "..up_branch_chance) return false end
+        local side_bud_chance = automata.get_player_setting(pname, "side_bud_chance")
+        if not side_bud_chance then rules.side_bud_chance = 0.01
+	    elseif tonumber(side_bud_chance) >= 0 and tonumber(side_bud_chance) <= 1 then rules.side_bud_chance = tonumber(side_bud_chance)
+	    else automata.show_popup(pname, "Side bud chance must be between 0 and 1 -- you said: "..side_bud_chance) return false end
+        local side_branch_chance = automata.get_player_setting(pname, "side_branch_chance")
+        if not side_branch_chance then rules.side_branch_chance = 0.5
+	    elseif tonumber(side_branch_chance) >= 0 and tonumber(side_branch_chance) <= 1 then rules.side_branch_chance = tonumber(side_branch_chance)
+	    else automata.show_popup(pname, "Side branch chance must be between 0 and 1 -- you said: "..side_branch_chance) return false end
+        local down_bud_chance = automata.get_player_setting(pname, "down_bud_chance")
+        if not down_bud_chance then rules.down_bud_chance = 0.01
+	    elseif tonumber(down_bud_chance) >= 0 and tonumber(down_bud_chance) <= 1 then rules.down_bud_chance = tonumber(down_bud_chance)
+	    else automata.show_popup(pname, "Down bud chance must be between 0 and 1 -- you said: "..down_bud_chance) return false end
+        local down_branch_chance = automata.get_player_setting(pname, "down_branch_chance")
+        if not down_branch_chance then rules.down_branch_chance = 0.5
+	    elseif tonumber(down_branch_chance) >= 0 and tonumber(down_branch_chance) <= 1 then rules.down_branch_chance = tonumber(down_branch_chance)
+	    else automata.show_popup(pname, "Down branch chance must be between 0 and 1 -- you said: "..down_branch_chance) return false end
+        local bud_iter_delay = automata.get_player_setting(pname, "bud_iter_delay")
+        if not bud_iter_delay then rules.bud_iter_delay = 15
+	    elseif tonumber(bud_iter_delay) > 0 and tonumber(bud_iter_delay) < 1001 then rules.bud_iter_delay = tonumber(bud_iter_delay)
+	    else automata.show_popup(pname, "Bud iteration delay must be between 1 and 1000 -- you said: "..bud_iter_delay) return false end
+        local side_branch_height = automata.get_player_setting(pname, "side_branch_height")
+        if not side_branch_height then rules.side_branch_height = 20
+	    elseif tonumber(side_branch_height) > 0 and tonumber(side_branch_height) < 1001 then rules.side_branch_height = tonumber(side_branch_height)
+	    else automata.show_popup(pname, "Side branch height must be between 1 and 1000 -- you said: "..side_branch_height) return false end
+        local down_branch_height = automata.get_player_setting(pname, "down_branch_height")
+        if not down_branch_height then rules.down_branch_height = 5
+	    elseif tonumber(down_branch_height) > 0 and tonumber(down_branch_height) < 1001 then rules.down_branch_height = tonumber(down_branch_height)
+	    else automata.show_popup(pname, "Down branch height must be between 1 and 1000 -- you said: "..down_branch_height) return false end
+        local leaf_height = automata.get_player_setting(pname, "leaf_height")
+        if not leaf_height then rules.leaf_height = 19
+	    elseif tonumber(leaf_height) > 0 and tonumber(leaf_height) < 1001 then rules.leaf_height = tonumber(leaf_height)
+	    else automata.show_popup(pname, "Leaf height must be between 1 and 1000 -- you said: "..leaf_height) return false end
+        local leaf_chance = automata.get_player_setting(pname, "leaf_chance")
+        if not leaf_chance then rules.leaf_chance = 0.1
+	    elseif tonumber(leaf_chance) >= 0 and tonumber(leaf_chance) <= 1 then rules.leaf_chance = tonumber(leaf_chance)
+	    else automata.show_popup(pname, "Leaf chance must be between 0 and 1 -- you said: "..leaf_chance) return false end
+        local fruit_chance = automata.get_player_setting(pname, "fruit_chance")
+        if not fruit_chance then rules.fruit_chance = 0.1
+	    elseif tonumber(fruit_chance) >= 0 and tonumber(fruit_chance) <= 1 then rules.fruit_chance = tonumber(fruit_chance)
+	    else automata.show_popup(pname, "Fruit chance must be between 0 and 1 -- you said: "..fruit_chance) return false end
     end
 	return rules
 end
@@ -1128,7 +1162,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		--the main form
 		if formname == "automata:rc_form" then 
 			-- if any tab but 6 selected unlist the player as having tab6 open
-			if fields.quit or ( fields.tab ~= "5" and not fields.pid_id ) then 
+			if fields.quit or ( fields.tab ~= "6" and not fields.pid_id ) then 
 				automata.open_tab6[pname] = nil
 			end 
 			--detect tab change	
@@ -1422,10 +1456,37 @@ function automata.show_rc_form(pname)
 		return true
 	end
 	if tab == "5" then --tree mode
+        local up_bud_chance = automata.get_player_setting(pname, "up_bud_chance") or ""
+        local up_branch_chance = automata.get_player_setting(pname, "up_branch_chance") or ""
+        local side_bud_chance = automata.get_player_setting(pname, "side_bud_chance") or ""
+        local side_branch_chance = automata.get_player_setting(pname, "side_branch_chance") or ""
+        local down_bud_chance = automata.get_player_setting(pname, "down_bud_chance") or ""
+        local down_branch_chance = automata.get_player_setting(pname, "down_branch_chance") or ""
+        local bud_iter_delay = automata.get_player_setting(pname, "bud_iter_delay") or ""
+        local side_branch_height = automata.get_player_setting(pname, "side_branch_height") or ""
+        local down_branch_height = automata.get_player_setting(pname, "down_branch_height") or ""
+        local leaf_height = automata.get_player_setting(pname, "leaf_height") or ""
+        local leaf_chance = automata.get_player_setting(pname, "leaf_chance") or ""
+        local fruit_chance = automata.get_player_setting(pname, "fruit_chance") or ""
+
+        local f_tree_settings = "field[6,1;2,1;up_bud_chance;Up bud;"..minetest.formspec_escape(up_bud_chance).."]" ..
+                                "field[8,1;2,1;up branch_chance;Up branch;"..minetest.formspec_escape(up_branch_chance).."]" ..
+                                "field[6,2;2,1;side_bud_chance;Side bud;"..minetest.formspec_escape(side_bud_chance).."]" ..
+                                "field[8,2;2,1;side_branch_chance;Side branch;"..minetest.formspec_escape(side_branch_chance).."]" ..
+                                "field[6,3;2,1;down_bud_chance;Down bud;"..minetest.formspec_escape(down_bud_chance).."]" ..
+                                "field[8,3;2,1;down_branch_chance;Down branch;"..minetest.formspec_escape(down_branch_chance).."]" ..
+                                "field[6,4;2,1;bud_iter_delay;Bud delay;"..minetest.formspec_escape(bud_iter_delay).."]" ..
+                                "field[8,4;2,1;side_branch_height;Branch height;"..minetest.formspec_escape(side_branch_height).."]" ..
+                                "field[6,5;2,1;down_branch_height;Down height;"..minetest.formspec_escape(down_branch_height).."]" ..
+                                "field[8,5;2,1;leaf_height;Leaf height;"..minetest.formspec_escape(leaf_height).."]" ..
+                                "field[6,6;2,1;leaf_chance;Leaf chance;"..minetest.formspec_escape(leaf_chance).."]" ..
+                                "field[8,6;2,1;fruit_chance;Fruit chance;"..minetest.formspec_escape(fruit_chance).."]"
+
         minetest.show_formspec(pname, "automata:rc_form", 
-                                f_header .. 
-                                f_grow_settings ..
-                                f_footer
+                                    f_header .. 
+                                    f_grow_settings ..
+                                    f_tree_settings ..
+                                    f_footer
         )
     end
     if tab == "6" then --manage patterns
@@ -1457,8 +1518,7 @@ function automata.show_rc_form(pname)
 						"field[9.5,1;2,1;add_gens;More Gens:;"..minetest.formspec_escape(add_gens).."]"
 		end
 		minetest.show_formspec(pname, "automata:rc_form", 
-								f_header ..	f_plist
-								
+								f_header ..	f_plist					
 		)
 		return true
 	end
