@@ -1,5 +1,5 @@
 # automata v.0.1.1
-### A minetest mod for growing various cellular automata, including conway's game of life...
+### A minetest mod for growing various cellular automata, including conway's game of life and giant procedural trees.
 
 ### Installation
 like any minetest mod just install the mod as "automata" in your mods folder
