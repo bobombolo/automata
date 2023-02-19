@@ -965,7 +965,7 @@ function automata.rules_validate(pname, rule_override)
 			local n2d = automata.get_player_setting(pname, "n2d")
 			rules.neighbors = tonumber(n2d)
 			local code2d = automata.get_player_setting(pname, "code2d")
-			if not code2d then code2d = "23/3" end
+			if not code2d then code2d = "1234/14" end
 			rules.survive, rules.birth = automata.code2d_to_sb_and_nks(code2d)
 		elseif tab == "4" then
 			rules.neighbors = 8
@@ -978,7 +978,7 @@ function automata.rules_validate(pname, rule_override)
 		local n3d = automata.get_player_setting(pname, "n3d")
 		rules.neighbors = tonumber(n3d)
 		local code3d = automata.get_player_setting(pname, "code3d")
-		if not code3d then code3d = "2,3/3" end 
+		if not code3d then code3d = "1,2,3,4/1,4" end 
 		rules.survive, rules.birth = automata.code2d_to_sb_and_nks(code3d)
 	elseif tab == "5" then --tree mode
         rules.neighbors = 26
@@ -1316,10 +1316,10 @@ function automata.show_rc_form(pname)
 	--load the default fields for the forms based on player's last settings
 	--gens
 	local gens = automata.get_player_setting(pname, "gens")
-	if not gens then gens = "" end
+	if not gens then gens = "30" end
 	--trail
 	local trail = automata.get_player_setting(pname, "trail")
-	if not trail then trail = "" end
+	if not trail then trail = "default:dirt" end
 	--final
 	local final = automata.get_player_setting(pname, "final")
 	if not final then final = "" end
@@ -1351,7 +1351,7 @@ function automata.show_rc_form(pname)
 	if tab == "1" or tab == "2" or tab == "4" then
 		--grow_distance
 		local grow_distance = automata.get_player_setting(pname, "grow_distance")
-		if not grow_distance then grow_distance = "" end
+		if not grow_distance then grow_distance = "1" end
 		--grow_axis (for 2D implies the calculation plane, for 1D cannot be the same as "axis")
 		local grow_axis_id
 		local grow_axis = automata.get_player_setting(pname, "grow_axis")
@@ -1367,7 +1367,7 @@ function automata.show_rc_form(pname)
 		if tab == "1"  then
 			--code1d (must be between 1 and 256 -- NKS rule numbers for 1D automata)
 			local code1d = automata.get_player_setting(pname, "code1d")
-			if not code1d then code1d = "" end
+			if not code1d then code1d = "30" end
 			--axis (this is the calculation axis and must not be the same as the grow_axis)
 			local axis_id
 			local axis = automata.get_player_setting(pname, "axis")
@@ -1402,11 +1402,11 @@ function automata.show_rc_form(pname)
 			end
 			--code2d
 			local code2d = automata.get_player_setting(pname, "code2d")
-			if not code2d then code2d = "" end
+			if not code2d then code2d = "1234/14" end
 			local s, b, nks = automata.code2d_to_sb_and_nks(code2d)
 			local f_n2d = 				"label[1,0.5;Neighbors]"..
 										"dropdown[3,0.5;1,1;n2d;4,8;"..n2d_id.."]"
-			local f_code2d = 			"field[6,1;6,1;code2d;Rules (eg: 23/3);"..
+			local f_code2d = 			"field[6,1;6,1;code2d;Rules (eg: survival/birth);"..
 												minetest.formspec_escape(code2d).."]"..
 										"button_exit[6,2;2,1;exit;NKS Code]"..
 										"label[8,2.2;Currently NKS code "..nks.."]"
@@ -1445,10 +1445,10 @@ function automata.show_rc_form(pname)
 		end
 		--code3d
 		local code3d = automata.get_player_setting(pname, "code3d")
-		if not code3d then code3d = "" end
+		if not code3d then code3d = "1,2,3,4/1,4" end
 		local f_n3d = 		"label[1,0.5;Neighbors]"..
 							"dropdown[3,0.5;1,1;n3d;6,18,26;"..n3d_id.."]"
-		local f_code3d = 	"field[6,1;6,1;code3d;Rules (eg: 2,3,24,25/3,14,15,16);"..minetest.formspec_escape(code3d).."]"
+		local f_code3d = 	"field[6,1;6,1;code3d;Rules (eg: survival/birth);"..minetest.formspec_escape(code3d).."]"
 		minetest.show_formspec(pname, "automata:rc_form", 
 								f_header ..
 								f_grow_settings ..
