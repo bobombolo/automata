@@ -41,13 +41,13 @@ If worldedit is installed, this mod adds a chat command, "//owncells" which allo
 
 For other known issues and planned improvements see: https://github.com/bobombolo/automata/issues
 
-##New since v.0.1.0
+## New since v.0.1.0
 - tree mode has been added. Trees are an example of a non-totalistic, probabilistic 3D cellular automata (26n). The Tree tab allows the user to control the probabilities and heights of the growth.
 
-##New since v.0.0.9
+## New since v.0.0.9
 - zero-neighbor-birth is now supported within the extent of the pattern (not in the infinite field, alas)
 
-##New since v.0.0.8
+## New since v.0.0.8
 - added chat command "//owncells" for activating automata blocks created by worldedit or reactivating cells orphaned by quit/crash (addresses import/export, persistence, cleanup of orphaned cells)
 - fixed bug in manage tab form
 - fixed bug in digging automata blocks
@@ -55,7 +55,7 @@ For other known issues and planned improvements see: https://github.com/bobombol
 - fixed bug preventing popup forms from showing (need better solution see issue #30)
 - clicking on a LIF in the import tab shows a summary of the pattern
 
-##New since v.0.0.7
+## New since v.0.0.7
 - major efficiency boost thanks to:
     - re-factored to use voxelManip exclusively, eliminate unnecessary calls,
     - no reading from the map, most indexes and positions calculated by arithmetic
@@ -63,21 +63,21 @@ For other known issues and planned improvements see: https://github.com/bobombol
 - easter egg: enter RAINBOW as the trail field and the pattern trail will be colored wool
 - inactive cells now owned per-player (but any cell can be dug by anyone)
 
-##New since v.0.0.6
+## New since v.0.0.6
 - fixed a bug when pausing patterns in manage tab
 - improved efficiency by double by storing hashed positions with their actual positions ie, {x,y,z} to reduce calls to minetest.hash_node_position() and minetest.get_position_from_hash()
 - removed garbage code (duplicates from bad merge)
 
-##New since v.0.0.5
+## New since v.0.0.5
 - fixed some mashed up code from merge (duplicate minetest.register()s)
 - refactored the growth period to be proportional to math.log(cell_count) (in seconds)
 
-##New since v.0.0.4
+## New since v.0.0.4
 - implemented the Lua Voxel Manipulator instead of set_node()
 - small form bug fixes
 - crafting recipes
 
-##New since v.0.0.3
+## New since v.0.0.3
 - improved form with management tab, better validation, persistence
 - 1D automata introduced
 - 3D automata introduced
@@ -86,10 +86,10 @@ For other known issues and planned improvements see: https://github.com/bobombol
 - patterns can be set to be destructive or respect the environment
 
 
-##New since v.0.0.2
+## New since v.0.0.2
 - menu for creating Game of Life entities from a library of .lif v.1.05 files at current location
 
-##New since v.0.0.1
+## New since v.0.0.1
 - multiple cell activation solved with Remote Control
 - eliminated all but two node types, active and inactive
 - eliminated reliance on minetest.register_abm, node metadata
@@ -99,10 +99,10 @@ For other known issues and planned improvements see: https://github.com/bobombol
 - efficiency greatly improved, started maintaining pmin and pmax
 - much improved rule form and form validation
 
-##License
+## License
 Author: bobomb, License: WTFPL
 
-##Screenshots
+## Screenshots
 
 "Single" mode
 
