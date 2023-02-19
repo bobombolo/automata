@@ -202,8 +202,8 @@ function automata.process_queue()
 			else
 				automata.grow_queue[pattern_id] = nil
 			end
-			--update "manage" formspec for creator if tab 5 open
-			if automata.open_tab5[v.creator] then
+			--update "manage" formspec for creator if tab 6 open
+			if automata.open_tab6[v.creator] then
 				automata.show_rc_form(v.creator)
 				--@TODO this sometimes fails to happen on finished patterns (issue #30)
 				--also when lag is heavy this form can keep reopening on the player
@@ -219,7 +219,8 @@ function automata.grow(pattern_id, pname)
 	local iteration = automata.patterns[pattern_id].iteration +1
 	local death_list ={} --cells that will be set to rules.trail at the end of grow()
 	local birth_list = {} --cells that will be set to automata:active at the end of grow()
-	local empty_neighbors = {} --non-active neighbor cell list to be tested for births
+    local leaves_list = {} -- cells that will become leaves in tree mode at the end of grow()	
+    local empty_neighbors = {} --non-active neighbor cell list to be tested for births
 	local cell_count = 0 --since the indexes is keyed by vi, can't do #indexes
 	local xmin,ymin,zmin,xmax,ymax,zmax --for the new pmin and pmax -- used to pace grow()
 	--load the rules
@@ -245,6 +246,8 @@ function automata.grow(pattern_id, pname)
 	end
 	local c_air      = minetest.get_content_id("air")
 	local c_automata = minetest.get_content_id("automata:active")
+    local c_leaves = minetest.get_content_id("default:leaves")
+    local c_apple = minetest.get_content_id("default:apple")
 	--create a voxelManipulator instance
 	local vm = minetest.get_voxel_manip()
 	--expand the voxel extent by neighbors and growth beyond last pmin and pmax
@@ -407,147 +410,344 @@ function automata.grow(pattern_id, pname)
 	local growth_vi = (growth_offset.z * new_ystride * new_xstride)
 					+ (growth_offset.y * new_xstride) 
 					+  growth_offset.x
-	--CELL SURVIVAL TESTING LOOP: tests all old_indexes against rules.survival or code1d[3,4,7,8]
-	for old_pos_vi, pos in next, old_indexes do		
-		local survival = false
-		--we need to convert the old index to the new index regardless of survival/death
-		local new_pos_vi
-		if same_extent then
-			new_pos_vi = old_pos_vi
-		else	
-			new_pos_vi = new_area:indexp(pos)
-		end	
-		--CELL SURVIVAL TESTING: non-totalistic rules (ie, 1D)
-		if rules.neighbors == 2 then
-			local plus, minus
-			--test the plus neighbor
-			local pluspos_vi  = old_pos_vi + neighborhood_vis.plus
-			if old_indexes[pluspos_vi] then plus  = 1
-			else empty_neighbors[pluspos_vi] = {x=pos.x+neighborhood.plus.x,
-												y=pos.y+neighborhood.plus.y,
-												z=pos.z+neighborhood.plus.z}
+    if rules.tree then --tree stuff
+        --in tree mode everything survives by default
+	    for old_pos_vi, pos in next, old_indexes do		
+		    local survival = true
+		    --we need to convert the old index to the new index regardless of survival/death
+		    local new_pos_vi
+		    if same_extent then
+			    new_pos_vi = old_pos_vi
+		    else	
+			    new_pos_vi = new_area:indexp(pos)
+		    end	
+		    
+		    --CELL SURVIVAL TESTING
+		    local same_count = 0
+		    for k, vi_offset in next, neighborhood_vis do
+			    --add the neighbor offsets to the position
+			    local n_vi = old_pos_vi + vi_offset
+			    --test for sameness
+			    if old_indexes[n_vi] then
+				    same_count = same_count + 1
+			    else
+				    empty_neighbors[n_vi] = {x=pos.x+neighborhood[k].x,
+										     y=pos.y+neighborhood[k].y,
+										     z=pos.z+neighborhood[k].z}
+			    end
+		    end
+		    local north = neighborhood_vis.n + old_pos_vi
+            local south = neighborhood_vis.s + old_pos_vi
+            local east = neighborhood_vis.e + old_pos_vi
+            local west = neighborhood_vis.w + old_pos_vi
+            local top = neighborhood_vis.t + old_pos_vi
+            local bottom = neighborhood_vis.b + old_pos_vi
+            local northeast = neighborhood_vis.ne + old_pos_vi
+            local southeast = neighborhood_vis.se + old_pos_vi
+            local southwest = neighborhood_vis.sw + old_pos_vi
+            local northwest = neighborhood_vis.nw + old_pos_vi
+            local bottomnorth = neighborhood_vis.bn + old_pos_vi
+            local bottomeast = neighborhood_vis.be + old_pos_vi
+            local bottomsouth = neighborhood_vis.bs + old_pos_vi
+            local bottomwest = neighborhood_vis.bw + old_pos_vi
+            local topnorth = neighborhood_vis.tn + old_pos_vi
+            local topeast = neighborhood_vis.te + old_pos_vi
+            local topsouth = neighborhood_vis.ts + old_pos_vi
+            local topwest = neighborhood_vis.tw + old_pos_vi
+            --the following survival rules eliminate stair-stepping 
+            if old_indexes[northwest] and old_indexes[southeast] and old_indexes[northeast] and old_indexes[east]
+            and old_indexes[north] and same_count == 5 then
+                survival = false
+            end
+            if old_indexes[northeast] and old_indexes[southwest] and old_indexes[southeast] and old_indexes[south]
+            and old_indexes[east] and same_count == 5 then
+                survival = false
+            end
+            if old_indexes[south] and old_indexes[west] and old_indexes[southwest] and old_indexes[southeast] 
+            and old_indexes[northwest] and same_count == 5 then
+                survival = false
+            end
+            if old_indexes[west] and old_indexes[north] and old_indexes[northwest] and old_indexes[northeast]
+            and old_indexes[southwest] and same_count == 5 then
+                survival = false
+            end
+            if old_indexes[topnorth] and old_indexes[north] and old_indexes[bottom] and old_indexes[bottomnorth]
+            and old_indexes[bottomsouth] and same_count == 5 then
+                survival = false
+            end
+            if old_indexes[topeast] and old_indexes[east] and old_indexes[bottomeast] and old_indexes[bottom]
+            and old_indexes[bottomwest] and same_count == 5 then
+                survival = false
+            end
+            if old_indexes[topsouth] and old_indexes[south] and old_indexes[bottomsouth] and old_indexes[bottom]
+            and old_indexes[bottomnorth] and same_count == 5 then
+                survival = false
+            end
+            if old_indexes[topwest] and old_indexes[west] and old_indexes[bottomwest] and old_indexes[bottom]   
+            and old_indexes[bottomeast] and same_count == 5 then
+                survival = false
+            end
+            
+		    if survival then
+		    --add to birth list with new position and death of old cell if growth is not 0
+			    if rules.grow_distance ~= 0 then
+				    local gpos_vi = new_pos_vi + growth_vi
+				    local gpos = {x=pos.x+growth_offset.x, y=pos.y+growth_offset.y, z=pos.z+growth_offset.z}
+				    birth_list[gpos_vi] = gpos --when node is actually set we will add to new_cell_list
+				    death_list[new_pos_vi] = pos --with grow_distance ~= 0, the old pos dies leaving rules.trail
+			    else
+				    --in the case that this is the final iteration, we need to pass it to the life list afterall
+				    if is_final == 1 then
+					    birth_list[new_pos_vi] = pos --when node is actually set we will add to new_indexes
+				    else
+					    add_to_new_cell_list(new_pos_vi, pos) --bypass birth_list go straight to new_indexes
+				    end
+			    end
+		    else
+			    --death of old cell in new voxelArea
+			    death_list[new_pos_vi] = pos
+		    end
+	    end
+        --BIRTH testing for trees
+        -- tests all empty_neighbors against remaining rules.birth or code1d[2,5,6]
+	    for epos_vi, epos in next, empty_neighbors do
+		    local birth = false
+		    local leaves = false
+		    --CELL BIRTH TESTING:
+		    
+		    local same_count = 0
+            --print(dump(neighborhood_vis))
+		    for k, vi_offset in next, neighborhood_vis do
+			    --add the offsets to the position
+			    local n_vi = epos_vi + vi_offset
+			    --test for sameness
+			    if old_indexes[n_vi] then
+				    same_count = same_count + 1
+			    end
+		    end
+            local iter = automata.patterns[pattern_id].iteration
+            local base = automata.patterns[pattern_id].pmin.y
+            local chance = math.random()
+            
+            local bottom = neighborhood_vis.b + epos_vi
+            local top = neighborhood_vis.t + epos_vi
+            local north = neighborhood_vis.n + epos_vi
+            local east = neighborhood_vis.e + epos_vi
+            local south = neighborhood_vis.s + epos_vi
+            local west = neighborhood_vis.w + epos_vi
+            
+            --if this block is on the top face of another block then it has a chance of growing
+            if old_indexes[bottom] and same_count == 1 and chance < rules.up_branch_chance then
+                birth = true
+			elseif old_indexes[bottom] and chance < rules.up_bud_chance then
+                birth = true
+            end
+            print("epos.y: " .. epos.y .." base: " .. base)
+            if old_indexes[north] and same_count == 1 and epos.y - base > rules.side_branch_height 
+            and chance < rules.side_branch_chance then
+                birth = true
+			elseif old_indexes[north] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then    
+            birth = true
+            end
+            if old_indexes[south] and same_count == 1 and epos.y - base > rules.side_branch_height
+            and chance < rules.side_branch_chance then
+                birth = true
+            elseif old_indexes[south] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then
+                birth = true
 			end
-			--test the minus neighbor
-			local minuspos_vi = old_pos_vi + neighborhood_vis.minus
-			if old_indexes[minuspos_vi] then minus = 1 
-			else empty_neighbors[minuspos_vi] = {x=pos.x+neighborhood.minus.x,
-												 y=pos.y+neighborhood.minus.y,
-												 z=pos.z+neighborhood.minus.z}
+            if old_indexes[east] and same_count == 1 and epos.y - base > rules.side_branch_height
+            and chance < rules.side_branch_chance then
+                birth = true
+            elseif old_indexes[east] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then
+                birth = true
 			end
-			--apply the survival rules
-			if ( not plus and not minus and code1d[3]==1 )
-			or (     plus and not minus and code1d[4]==1 )
-			or ( not plus and     minus and code1d[7]==1 )
-			or (     plus and     minus and code1d[8]==1 ) then
-				survival = true
+            if old_indexes[west] and same_count == 1 and epos.y - base > rules.side_branch_height
+            and chance < rules.side_branch_chance then
+                birth = true
+            elseif old_indexes[west] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then
+                birth = true
 			end
-		--CELL SURVIVAL TESTING: totalistic ruleset (ie 2D and 3D)
-		else
-			local same_count = 0
-			for k, vi_offset in next, neighborhood_vis do
-				--add the neighbor offsets to the position
-				local n_vi = old_pos_vi + vi_offset
-				--test for sameness
-				if old_indexes[n_vi] then
-					same_count = same_count + 1
-				else
-					empty_neighbors[n_vi] = {x=pos.x+neighborhood[k].x,
-											 y=pos.y+neighborhood[k].y,
-											 z=pos.z+neighborhood[k].z}
-				end
-			end
-			--now we have a same neighbor count, apply life and death rules
-			if rules.survive[same_count] then
-				survival = true
-			end
-		end
-		if survival then
-		--add to birth list with new position and death of old cell if growth is not 0
-			if rules.grow_distance ~= 0 then
-				local gpos_vi = new_pos_vi + growth_vi
-				local gpos = {x=pos.x+growth_offset.x, y=pos.y+growth_offset.y, z=pos.z+growth_offset.z}
-				birth_list[gpos_vi] = gpos --when node is actually set we will add to new_cell_list
-				death_list[new_pos_vi] = pos --with grow_distance ~= 0, the old pos dies leaving rules.trail
-			else
-				--in the case that this is the final iteration, we need to pass it to the life list afterall
-				if is_final == 1 then
-					birth_list[new_pos_vi] = pos --when node is actually set we will add to new_indexes
-				else
-					add_to_new_cell_list(new_pos_vi, pos) --bypass birth_list go straight to new_indexes
-				end
-			end
-		else
-			--death of old cell in new voxelArea
-			death_list[new_pos_vi] = pos
-		end
-	end
-	--CELL BIRTH TESTING:
-	-- all guaranteed zero-neighbor cells give birth if zero-n birth is active
-	if zeroNbirth then
-		-- remove neighbors we know to be empty but have an active cell neighbor
-		for vi, p in next, empty_neighbors do
-			zero_ns[vi] = nil
-		end
-		-- turn on all the remaining cells that have zero neighbors
-		for vi in next, zero_ns do
-			local epos = old_area:position(vi)
-			--only if birth happens convert old_index to new_index
-			local new_epos_vi = new_area:indexp(epos)
-			--add to birth list
-			local bpos_vi = new_epos_vi + growth_vi
-			local bpos = {x=epos.x+growth_offset.x, y=epos.y+growth_offset.y, z=epos.z+growth_offset.z}
-			birth_list[bpos_vi] = bpos --when node is actually set we will add to new_indexes
-		end
-	end
-	-- tests all empty_neighbors against remaining rules.birth or code1d[2,5,6]
-	for epos_vi, epos in next, empty_neighbors do
-		local birth = false
-		--CELL BIRTH TESTING: non-totalistic rules (ie. 1D)
-		if rules.neighbors == 2 then
-			local plus, minus
-			--test the plus neighbor
-			local pluspos_vi  = epos_vi + neighborhood_vis.plus
-			if old_indexes[pluspos_vi] then plus  = 1
-			end
-			--test the minus neighbor
-			local minuspos_vi = epos_vi + neighborhood_vis.minus
-			if old_indexes[minuspos_vi] then minus = 1
-			end
-			--apply the birth rules
-			if (     plus and not minus and code1d[2]==1 )
-			or ( not plus and     minus and code1d[5]==1 )
-			or (     plus and     minus and code1d[6]==1 ) then
-				birth = true
-			end
-		--CELL BIRTH TESTING: totalistic rules (ie. 2D and 3D)
-		else
-			local same_count = 0
-			for k, vi_offset in next, neighborhood_vis do
-				--add the offsets to the position
-				local n_vi = epos_vi + vi_offset
-				--test for sameness
-				if old_indexes[n_vi] then
-					same_count = same_count + 1
-				end
-			end
-			if rules.birth[same_count] then
-				birth = true
-			end
-		end
-		if birth then
-			--only if birth happens convert old_index to new_index
-			local new_epos_vi
-			if same_extent then
-				new_epos_vi = epos_vi
-			else
-				new_epos_vi = new_area:indexp(epos)
-			end
-			--add to birth list
-			local bpos_vi = new_epos_vi + growth_vi
-			local bpos = {x=epos.x+growth_offset.x, y=epos.y+growth_offset.y, z=epos.z+growth_offset.z}
-			birth_list[bpos_vi] = bpos --when node is actually set we will add to new_indexes
-		end
-	end
+            if old_indexes[top] and same_count == 1 and epos.y - base < rules.down_branch_height
+            and chance < rules.down_branch_chance then
+                birth = true
+            elseif old_indexes[top] and chance < rules.down_bud_chance then
+                birth = true
+            end
+            --leaves
+            if birth == false and epos.y - base > rules.leaf_height and chance < rules.leaf_chance then
+               leaves = true
+            end
+		    if birth then
+			    --only if birth happens convert old_index to new_index
+			    local new_epos_vi
+			    if same_extent then
+				    new_epos_vi = epos_vi
+			    else
+				    new_epos_vi = new_area:indexp(epos)
+			    end
+			    --add to birth list
+			    local bpos_vi = new_epos_vi + growth_vi
+			    local bpos = {x=epos.x+growth_offset.x, y=epos.y+growth_offset.y, z=epos.z+growth_offset.z}
+			    birth_list[bpos_vi] = bpos --when node is actually set we will add to new_indexes
+		    end
+            if leaves then
+                --only if leaves happens convert old_index to new_index
+			    local new_epos_vi
+			    if same_extent then
+				    new_epos_vi = epos_vi
+			    else
+				    new_epos_vi = new_area:indexp(epos)
+			    end
+			    --add to birth list
+			    local lpos_vi = new_epos_vi + growth_vi
+			    local lpos = {x=epos.x+growth_offset.x, y=epos.y+growth_offset.y, z=epos.z+growth_offset.z}
+			    leaves_list[lpos_vi] = lpos --when node is actually set we will add to new_indexes
+
+            end
+	    end
+    else --non-tree stuff
+        --CELL SURVIVAL TESTING LOOP: tests all old_indexes against rules.survival or code1d[3,4,7,8]
+	    for old_pos_vi, pos in next, old_indexes do		
+		    local survival = false
+		    --we need to convert the old index to the new index regardless of survival/death
+		    local new_pos_vi
+		    if same_extent then
+			    new_pos_vi = old_pos_vi
+		    else	
+			    new_pos_vi = new_area:indexp(pos)
+		    end	
+		    --CELL SURVIVAL TESTING: non-totalistic rules (ie, 1D)
+		    if rules.neighbors == 2 then
+			    local plus, minus
+			    --test the plus neighbor
+			    local pluspos_vi  = old_pos_vi + neighborhood_vis.plus
+			    if old_indexes[pluspos_vi] then plus  = 1
+			    else empty_neighbors[pluspos_vi] = {x=pos.x+neighborhood.plus.x,
+												    y=pos.y+neighborhood.plus.y,
+												    z=pos.z+neighborhood.plus.z}
+			    end
+			    --test the minus neighbor
+			    local minuspos_vi = old_pos_vi + neighborhood_vis.minus
+			    if old_indexes[minuspos_vi] then minus = 1 
+			    else empty_neighbors[minuspos_vi] = {x=pos.x+neighborhood.minus.x,
+												     y=pos.y+neighborhood.minus.y,
+												     z=pos.z+neighborhood.minus.z}
+			    end
+			    --apply the survival rules
+			    if ( not plus and not minus and code1d[3]==1 )
+			    or (     plus and not minus and code1d[4]==1 )
+			    or ( not plus and     minus and code1d[7]==1 )
+			    or (     plus and     minus and code1d[8]==1 ) then
+				    survival = true
+			    end
+		    --CELL SURVIVAL TESTING: totalistic ruleset (ie 2D and 3D)
+		    else
+			    local same_count = 0
+			    for k, vi_offset in next, neighborhood_vis do
+				    --add the neighbor offsets to the position
+				    local n_vi = old_pos_vi + vi_offset
+				    --test for sameness
+				    if old_indexes[n_vi] then
+					    same_count = same_count + 1
+				    else
+					    empty_neighbors[n_vi] = {x=pos.x+neighborhood[k].x,
+											     y=pos.y+neighborhood[k].y,
+											     z=pos.z+neighborhood[k].z}
+				    end
+			    end
+			    --now we have a same neighbor count, apply life and death rules
+			    if rules.survive[same_count] then
+				    survival = true
+			    end
+		    end
+		    if survival then
+		    --add to birth list with new position and death of old cell if growth is not 0
+			    if rules.grow_distance ~= 0 then
+				    local gpos_vi = new_pos_vi + growth_vi
+				    local gpos = {x=pos.x+growth_offset.x, y=pos.y+growth_offset.y, z=pos.z+growth_offset.z}
+				    birth_list[gpos_vi] = gpos --when node is actually set we will add to new_cell_list
+				    death_list[new_pos_vi] = pos --with grow_distance ~= 0, the old pos dies leaving rules.trail
+			    else
+				    --in the case that this is the final iteration, we need to pass it to the life list afterall
+				    if is_final == 1 then
+					    birth_list[new_pos_vi] = pos --when node is actually set we will add to new_indexes
+				    else
+					    add_to_new_cell_list(new_pos_vi, pos) --bypass birth_list go straight to new_indexes
+				    end
+			    end
+		    else
+			    --death of old cell in new voxelArea
+			    death_list[new_pos_vi] = pos
+		    end
+	    end
+	    --CELL BIRTH TESTING:
+	    -- all guaranteed zero-neighbor cells give birth if zero-n birth is active
+	    if zeroNbirth then
+		    -- remove neighbors we know to be empty but have an active cell neighbor
+		    for vi, p in next, empty_neighbors do
+			    zero_ns[vi] = nil
+		    end
+		    -- turn on all the remaining cells that have zero neighbors
+		    for vi in next, zero_ns do
+			    local epos = old_area:position(vi)
+			    --only if birth happens convert old_index to new_index
+			    local new_epos_vi = new_area:indexp(epos)
+			    --add to birth list
+			    local bpos_vi = new_epos_vi + growth_vi
+			    local bpos = {x=epos.x+growth_offset.x, y=epos.y+growth_offset.y, z=epos.z+growth_offset.z}
+			    birth_list[bpos_vi] = bpos --when node is actually set we will add to new_indexes
+		    end
+	    end
+	    -- tests all empty_neighbors against remaining rules.birth or code1d[2,5,6]
+	    for epos_vi, epos in next, empty_neighbors do
+		    local birth = false
+		    --CELL BIRTH TESTING: non-totalistic rules (ie. 1D)
+		    if rules.neighbors == 2 then
+			    local plus, minus
+			    --test the plus neighbor
+			    local pluspos_vi  = epos_vi + neighborhood_vis.plus
+			    if old_indexes[pluspos_vi] then plus  = 1
+			    end
+			    --test the minus neighbor
+			    local minuspos_vi = epos_vi + neighborhood_vis.minus
+			    if old_indexes[minuspos_vi] then minus = 1
+			    end
+			    --apply the birth rules
+			    if (     plus and not minus and code1d[2]==1 )
+			    or ( not plus and     minus and code1d[5]==1 )
+			    or (     plus and     minus and code1d[6]==1 ) then
+				    birth = true
+			    end
+		    --CELL BIRTH TESTING: totalistic rules (ie. 2D and 3D)
+		    else
+			    local same_count = 0
+			    for k, vi_offset in next, neighborhood_vis do
+				    --add the offsets to the position
+				    local n_vi = epos_vi + vi_offset
+				    --test for sameness
+				    if old_indexes[n_vi] then
+					    same_count = same_count + 1
+				    end
+			    end
+			    if rules.birth[same_count] then
+				    birth = true
+			    end
+		    end
+		    if birth then
+			    --only if birth happens convert old_index to new_index
+			    local new_epos_vi
+			    if same_extent then
+				    new_epos_vi = epos_vi
+			    else
+				    new_epos_vi = new_area:indexp(epos)
+			    end
+			    --add to birth list
+			    local bpos_vi = new_epos_vi + growth_vi
+			    local bpos = {x=epos.x+growth_offset.x, y=epos.y+growth_offset.y, z=epos.z+growth_offset.z}
+			    birth_list[bpos_vi] = bpos --when node is actually set we will add to new_indexes
+		    end
+	    end
+    end
 	--apply deaths to data[]
 	for dpos_vi, dpos in next, death_list do
 		data[dpos_vi] = c_trail
@@ -555,7 +755,7 @@ function automata.grow(pattern_id, pname)
 	--apply births to data[]
 	for bpos_vi, bpos in next, birth_list do
 		--test for destructive mode and if the node is occupied
-		if rules.destruct == "true" or data[bpos_vi] == c_air then
+		if rules.destruct == "true" or data[bpos_vi] == c_air or data[bpos_vi] == c_leaves or data[bpos_vi] == c_apple then
 			--test for final iteration
 			if is_final == 1 then data[bpos_vi] = c_final
 			else data[bpos_vi] = c_automata
@@ -564,6 +764,18 @@ function automata.grow(pattern_id, pname)
 			add_to_new_cell_list(bpos_vi, bpos)
 		end
 	end
+    --set leaves
+    for lpos_vi, bpos in next, leaves_list do
+		--test for destructive mode and if the node is occupied
+		if rules.destruct == "true" or data[lpos_vi] == c_air then
+			if math.random() < rules.fruit_chance then
+                data[lpos_vi] = c_apple
+            else
+                data[lpos_vi] = c_leaves
+            end
+	    end
+	end
+    
 	vm:set_data(data)
 	vm:write_to_map()
 	vm:update_map()
@@ -684,7 +896,7 @@ function automata.is_valid_content_id(node_type)
 	local list = {}
 	--generate a list of all registered nodes that are simple blocks
 	for name, def in pairs(minetest.registered_nodes) do
-		if def.drawtype == "normal" and string.sub(name, 1, 9) ~= "automata:" then
+        if def.drawtype == "normal" and string.sub(name, 1, 9) ~= "automata:" then
 			table.insert(list, name)
 		end
 	end
@@ -767,7 +979,60 @@ function automata.rules_validate(pname, rule_override)
 		local code3d = automata.get_player_setting(pname, "code3d")
 		if not code3d then code3d = "2,3/3" end 
 		rules.survive, rules.birth = automata.code2d_to_sb_and_nks(code3d)
-	end
+	elseif tab == "5" then --tree mode
+        rules.neighbors = 26
+        rules.birth = {}
+        rules.survive = {}
+        rules.tree = true
+        local up_bud_chance = automata.get_player_setting(pname, "up_bud_chance")
+        if not up_bud_chance then rules.up_bud_chance = 0.01
+	    elseif tonumber(up_bud_chance) >= 0 and tonumber(up_bud_chance) <= 1 then rules.up_bud_chance = tonumber(up_bud_chance)
+	    else automata.show_popup(pname, "Up bud chance must be between 0 and 1 -- you said: "..up_bud_chance) return false end
+        local up_branch_chance = automata.get_player_setting(pname, "up_branch_chance")
+        if not up_branch_chance then rules.up_branch_chance = 0.5
+	    elseif tonumber(up_branch_chance) >= 0 and tonumber(up_branch_chance) <= 1 then rules.up_branch_chance = tonumber(up_branch_chance)
+	    else automata.show_popup(pname, "Up branch chance must be between 0 and 1 -- you said: "..up_branch_chance) return false end
+        local side_bud_chance = automata.get_player_setting(pname, "side_bud_chance")
+        if not side_bud_chance then rules.side_bud_chance = 0.01
+	    elseif tonumber(side_bud_chance) >= 0 and tonumber(side_bud_chance) <= 1 then rules.side_bud_chance = tonumber(side_bud_chance)
+	    else automata.show_popup(pname, "Side bud chance must be between 0 and 1 -- you said: "..side_bud_chance) return false end
+        local side_branch_chance = automata.get_player_setting(pname, "side_branch_chance")
+        if not side_branch_chance then rules.side_branch_chance = 0.5
+	    elseif tonumber(side_branch_chance) >= 0 and tonumber(side_branch_chance) <= 1 then rules.side_branch_chance = tonumber(side_branch_chance)
+	    else automata.show_popup(pname, "Side branch chance must be between 0 and 1 -- you said: "..side_branch_chance) return false end
+        local down_bud_chance = automata.get_player_setting(pname, "down_bud_chance")
+        if not down_bud_chance then rules.down_bud_chance = 0.01
+	    elseif tonumber(down_bud_chance) >= 0 and tonumber(down_bud_chance) <= 1 then rules.down_bud_chance = tonumber(down_bud_chance)
+	    else automata.show_popup(pname, "Down bud chance must be between 0 and 1 -- you said: "..down_bud_chance) return false end
+        local down_branch_chance = automata.get_player_setting(pname, "down_branch_chance")
+        if not down_branch_chance then rules.down_branch_chance = 0.5
+	    elseif tonumber(down_branch_chance) >= 0 and tonumber(down_branch_chance) <= 1 then rules.down_branch_chance = tonumber(down_branch_chance)
+	    else automata.show_popup(pname, "Down branch chance must be between 0 and 1 -- you said: "..down_branch_chance) return false end
+        local bud_iter_delay = automata.get_player_setting(pname, "bud_iter_delay")
+        if not bud_iter_delay then rules.bud_iter_delay = 15
+	    elseif tonumber(bud_iter_delay) > 0 and tonumber(bud_iter_delay) < 1001 then rules.bud_iter_delay = tonumber(bud_iter_delay)
+	    else automata.show_popup(pname, "Bud iteration delay must be between 1 and 1000 -- you said: "..bud_iter_delay) return false end
+        local side_branch_height = automata.get_player_setting(pname, "side_branch_height")
+        if not side_branch_height then rules.side_branch_height = 20
+	    elseif tonumber(side_branch_height) > 0 and tonumber(side_branch_height) < 1001 then rules.side_branch_height = tonumber(side_branch_height)
+	    else automata.show_popup(pname, "Side branch height must be between 1 and 1000 -- you said: "..side_branch_height) return false end
+        local down_branch_height = automata.get_player_setting(pname, "down_branch_height")
+        if not down_branch_height then rules.down_branch_height = 5
+	    elseif tonumber(down_branch_height) > 0 and tonumber(down_branch_height) < 1001 then rules.down_branch_height = tonumber(down_branch_height)
+	    else automata.show_popup(pname, "Down branch height must be between 1 and 1000 -- you said: "..down_branch_height) return false end
+        local leaf_height = automata.get_player_setting(pname, "leaf_height")
+        if not leaf_height then rules.leaf_height = 19
+	    elseif tonumber(leaf_height) > 0 and tonumber(leaf_height) < 1001 then rules.leaf_height = tonumber(leaf_height)
+	    else automata.show_popup(pname, "Leaf height must be between 1 and 1000 -- you said: "..leaf_height) return false end
+        local leaf_chance = automata.get_player_setting(pname, "leaf_chance")
+        if not leaf_chance then rules.leaf_chance = 0.1
+	    elseif tonumber(leaf_chance) >= 0 and tonumber(leaf_chance) <= 1 then rules.leaf_chance = tonumber(leaf_chance)
+	    else automata.show_popup(pname, "Leaf chance must be between 0 and 1 -- you said: "..leaf_chance) return false end
+        local fruit_chance = automata.get_player_setting(pname, "fruit_chance")
+        if not fruit_chance then rules.fruit_chance = 0.1
+	    elseif tonumber(fruit_chance) >= 0 and tonumber(fruit_chance) <= 1 then rules.fruit_chance = tonumber(fruit_chance)
+	    else automata.show_popup(pname, "Fruit chance must be between 0 and 1 -- you said: "..fruit_chance) return false end
+    end
 	return rules
 end
 -- function to convert integer to bigendian binary string needed frequently
@@ -897,9 +1162,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 		--the main form
 		if formname == "automata:rc_form" then 
-			-- if any tab but 5 selected unlist the player as having tab5 open
-			if fields.quit or ( fields.tab ~= "5" and not fields.pid_id ) then 
-				automata.open_tab5[pname] = nil
+			-- if any tab but 6 selected unlist the player as having tab6 open
+			if fields.quit or ( fields.tab ~= "6" and not fields.pid_id ) then 
+				automata.open_tab6[pname] = nil
 			end 
 			--detect tab change	
 			if old_tab and old_tab ~= automata.get_player_setting(pname, "tab") then
@@ -914,7 +1179,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			if fields.pid_id then
 				--translate the pid_id back to a pattern_id
 				local pid_id = string.sub(fields.pid_id, 5)
-				local pattern_id = automata.open_tab5[pname][tonumber(pid_id)] --this table is created in show_rcform() survives changes to patterns table
+				local pattern_id = automata.open_tab6[pname][tonumber(pid_id)] --this table is created in show_rcform() survives changes to patterns table
 				if string.sub(fields.pid_id, 1, 4) == "CHG:" and automata.patterns[pattern_id].status == "active" then
 					automata.grow_queue[pattern_id] = nil
 					automata.patterns[pattern_id].status = "paused"
@@ -970,7 +1235,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 end)
 --the formspecs and related settings and functions / selected field variables
 automata.player_settings = {} --per player form persistence
-automata.open_tab5 = {} --who has tab 5 (Manage) open at any moment
+automata.open_tab6 = {} --who has tab 6 (Manage) open at any moment
 automata.lifs = {} --indexed table of lif names
 automata.lifnames = "" --string of all lif file names
 --this is run at load time (see EOF)
@@ -1030,7 +1295,7 @@ function automata.get_player_setting(pname, setting)
 end
 -- show the main remote control form
 function automata.show_rc_form(pname)
-	local player = minetest.get_player_by_name(pname)
+    local player = minetest.get_player_by_name(pname)
 	local ppos = player:get_pos()
 	local degree = player:get_look_horizontal()*180/math.pi - 90
 	if degree < 0 then degree = degree + 360 end
@@ -1044,9 +1309,9 @@ function automata.show_rc_form(pname)
 		tab = "2"
 		automata.player_settings[pname] = {tab=tab}
 	end
-	--handle open tab5, system needs to know who has tab5 open at any moment so that
+	--handle open tab6, system needs to know who has tab6 open at any moment so that
 	-- it can be refreshed by globalstep activity...
-	if tab == "5" then automata.open_tab5[pname] = {} end --gets reset to nil in on_player_receive_fields()
+	if tab == "6" then automata.open_tab6[pname] = {} end --gets reset to nil in on_player_receive_fields()
 	--load the default fields for the forms based on player's last settings
 	--gens
 	local gens = automata.get_player_setting(pname, "gens")
@@ -1062,10 +1327,10 @@ function automata.show_rc_form(pname)
 	if not destruct then destruct = "false" end
 	--set some formspec sections for re-use on all tabs
 	local f_header = 			"size[12,10]" ..
-								"tabheader[0,0;tab;1D, 2D, 3D, Import, Manage;"..tab.."]"..
+								"tabheader[0,0;tab;1D, 2D, 3D, Import, Tree, Manage;"..tab.."]"..
 								"label[0,0;You are at x= "..math.floor(ppos.x)..
 								" y= "..math.floor(ppos.y).." z= "..math.floor(ppos.z).." and mostly facing "..dir.."]"
-	--1D, 2D, 3D, Import
+	--1D, 2D, 3D, Import, Tree
 	local f_grow_settings = 	"field[1,5;4,1;trail;Trail Block (eg: default:dirt);"..minetest.formspec_escape(trail).."]" ..
 								"field[1,6;4,1;final;Final Block (eg: default:mese);"..minetest.formspec_escape(final).."]" ..
 								"checkbox[0.7,7.5;destruct;Destructive?;"..destruct.."]"..
@@ -1191,7 +1456,41 @@ function automata.show_rc_form(pname)
 		)
 		return true
 	end
-	if tab == "5" then --manage patterns
+	if tab == "5" then --tree mode
+        local up_bud_chance = automata.get_player_setting(pname, "up_bud_chance") or ""
+        local up_branch_chance = automata.get_player_setting(pname, "up_branch_chance") or ""
+        local side_bud_chance = automata.get_player_setting(pname, "side_bud_chance") or ""
+        local side_branch_chance = automata.get_player_setting(pname, "side_branch_chance") or ""
+        local down_bud_chance = automata.get_player_setting(pname, "down_bud_chance") or ""
+        local down_branch_chance = automata.get_player_setting(pname, "down_branch_chance") or ""
+        local bud_iter_delay = automata.get_player_setting(pname, "bud_iter_delay") or ""
+        local side_branch_height = automata.get_player_setting(pname, "side_branch_height") or ""
+        local down_branch_height = automata.get_player_setting(pname, "down_branch_height") or ""
+        local leaf_height = automata.get_player_setting(pname, "leaf_height") or ""
+        local leaf_chance = automata.get_player_setting(pname, "leaf_chance") or ""
+        local fruit_chance = automata.get_player_setting(pname, "fruit_chance") or ""
+
+        local f_tree_settings = "field[6,1;2,1;up_bud_chance;Up bud;"..minetest.formspec_escape(up_bud_chance).."]" ..
+                                "field[8,1;2,1;up branch_chance;Up branch;"..minetest.formspec_escape(up_branch_chance).."]" ..
+                                "field[6,2;2,1;side_bud_chance;Side bud;"..minetest.formspec_escape(side_bud_chance).."]" ..
+                                "field[8,2;2,1;side_branch_chance;Side branch;"..minetest.formspec_escape(side_branch_chance).."]" ..
+                                "field[6,3;2,1;down_bud_chance;Down bud;"..minetest.formspec_escape(down_bud_chance).."]" ..
+                                "field[8,3;2,1;down_branch_chance;Down branch;"..minetest.formspec_escape(down_branch_chance).."]" ..
+                                "field[6,4;2,1;bud_iter_delay;Bud delay;"..minetest.formspec_escape(bud_iter_delay).."]" ..
+                                "field[8,4;2,1;side_branch_height;Branch height;"..minetest.formspec_escape(side_branch_height).."]" ..
+                                "field[6,5;2,1;down_branch_height;Down height;"..minetest.formspec_escape(down_branch_height).."]" ..
+                                "field[8,5;2,1;leaf_height;Leaf height;"..minetest.formspec_escape(leaf_height).."]" ..
+                                "field[6,6;2,1;leaf_chance;Leaf chance;"..minetest.formspec_escape(leaf_chance).."]" ..
+                                "field[8,6;2,1;fruit_chance;Fruit chance;"..minetest.formspec_escape(fruit_chance).."]"
+
+        minetest.show_formspec(pname, "automata:rc_form", 
+                                    f_header .. 
+                                    f_grow_settings ..
+                                    f_tree_settings ..
+                                    f_footer
+        )
+    end
+    if tab == "6" then --manage patterns
 		local patterns = ""
 		local i = 1
 		for k,v in next, automata.patterns do
@@ -1204,7 +1503,7 @@ function automata.show_rc_form(pname)
 							..v.cell_count.." time:"..math.ceil(v.t_timer).."ms min:"
 							..(pmin.x or "nil").."."..(pmin.y or "nil").."."..(pmin.z or "nil")
 							.." max:"..(pmax.x or "nil").."."..(pmax.y or nil).."."..(pmax.z or "nil") )
-				automata.open_tab5[pname][i]=k --need this table to decode the form's pid_ids back to pattern_ids
+				automata.open_tab6[pname][i]=k --need this table to decode the form's pid_ids back to pattern_ids
 			end
 		end
 		local pid_id = automata.get_player_setting(pname, "pid_id")
@@ -1220,8 +1519,7 @@ function automata.show_rc_form(pname)
 						"field[9.5,1;2,1;add_gens;More Gens:;"..minetest.formspec_escape(add_gens).."]"
 		end
 		minetest.show_formspec(pname, "automata:rc_form", 
-								f_header ..	f_plist
-								
+								f_header ..	f_plist					
 		)
 		return true
 	end
