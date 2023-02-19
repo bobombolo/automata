@@ -526,7 +526,7 @@ function automata.grow(pattern_id, pname)
 			    end
 		    end
             local iter = automata.patterns[pattern_id].iteration
-            local base = automata.patterns[pattern_id].pmin.y
+            local base = automata.patterns[pattern_id].base
             local chance = math.random()
             
             local bottom = neighborhood_vis.b + epos_vi
@@ -536,38 +536,38 @@ function automata.grow(pattern_id, pname)
             local south = neighborhood_vis.s + epos_vi
             local west = neighborhood_vis.w + epos_vi
             
-            --if this block is on the top face of another block then it has a chance of growing
-            if old_indexes[bottom] and same_count == 1 and chance < rules.up_branch_chance then
+            --if this block is on the top face of another block then it has a chance of growing if above the base
+            if old_indexes[bottom] and same_count == 1 and chance < rules.up_branch_chance and epos.y > base then
                 birth = true
 			elseif old_indexes[bottom] and chance < rules.up_bud_chance then
                 birth = true
             end
-            print("epos.y: " .. epos.y .." base: " .. base)
-            if old_indexes[north] and same_count == 1 and epos.y - base > rules.side_branch_height 
+            if old_indexes[north] and same_count == 1 and ( epos.y - base > rules.side_branch_height or epos.y < base - rules.down_branch_height )
             and chance < rules.side_branch_chance then
                 birth = true
 			elseif old_indexes[north] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then    
             birth = true
             end
-            if old_indexes[south] and same_count == 1 and epos.y - base > rules.side_branch_height
+            if old_indexes[south] and same_count == 1 and ( epos.y - base > rules.side_branch_height or epos.y < base - rules.down_branch_height )
             and chance < rules.side_branch_chance then
                 birth = true
             elseif old_indexes[south] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then
                 birth = true
 			end
-            if old_indexes[east] and same_count == 1 and epos.y - base > rules.side_branch_height
+            if old_indexes[east] and same_count == 1 and ( epos.y - base > rules.side_branch_height or epos.y < base - rules.down_branch_height )
             and chance < rules.side_branch_chance then
                 birth = true
             elseif old_indexes[east] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then
                 birth = true
 			end
-            if old_indexes[west] and same_count == 1 and epos.y - base > rules.side_branch_height
+            if old_indexes[west] and same_count == 1 and ( epos.y - base > rules.side_branch_height or epos.y < base - rules.down_branch_height )
             and chance < rules.side_branch_chance then
                 birth = true
             elseif old_indexes[west] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then
                 birth = true
 			end
-            if old_indexes[top] and same_count == 1 and epos.y - base < rules.down_branch_height
+            --down branching occurs below the base
+            if old_indexes[top] and same_count == 1 and epos.y < base
             and chance < rules.down_branch_chance then
                 birth = true
             elseif old_indexes[top] and chance < rules.down_bud_chance then
@@ -782,7 +782,7 @@ function automata.grow(pattern_id, pname)
 	--update pattern values
 	local timer = (os.clock() - t1) * 1000
 	local values =  { pmin = {x=xmin,y=ymin,z=zmin}, pmax = {x=xmax,y=ymax,z=zmax}, 
-				      cell_count = cell_count, emin = new_emin, emax = new_emax,
+				      cell_count = cell_count, emin = new_emin, emax = new_emax, base=automata.patterns[pattern_id].base,
 					  indexes = new_indexes, l_timer = timer, iteration = iteration,
 					  t_timer = automata.patterns[pattern_id].t_timer + timer,
 					  rules = rules, creator = pname
@@ -879,9 +879,10 @@ function automata.new_pattern(pname, offsets, rule_override)
 			vm:write_to_map()
 			vm:update_map()
 		end
+        local base = pmin.y --used by tree logic
 		local timer = (os.clock() - t1) * 1000
 		--add the cell list to the active cell registry with the gens, rules hash, and cell list
-		local values = { creator=pname, status="active", iteration=0, rules=rules, 
+		local values = { creator=pname, status="active", iteration=0, rules=rules, base=base, 
 						 cell_count = cell_count, cell_list=hashed_cells, pmin=pmin, pmax=pmax,
 						 emin=emin, emax=emax, t_timer=timer, indexes = new_indexes }
 		automata.patterns[pattern_id] = values --overwrite placeholder
@@ -985,7 +986,7 @@ function automata.rules_validate(pname, rule_override)
         rules.survive = {}
         rules.tree = true
         local up_bud_chance = automata.get_player_setting(pname, "up_bud_chance")
-        if not up_bud_chance then rules.up_bud_chance = 0.01
+        if not up_bud_chance then rules.up_bud_chance = 0.08
 	    elseif tonumber(up_bud_chance) >= 0 and tonumber(up_bud_chance) <= 1 then rules.up_bud_chance = tonumber(up_bud_chance)
 	    else automata.show_popup(pname, "Up bud chance must be between 0 and 1 -- you said: "..up_bud_chance) return false end
         local up_branch_chance = automata.get_player_setting(pname, "up_branch_chance")
@@ -1013,15 +1014,15 @@ function automata.rules_validate(pname, rule_override)
 	    elseif tonumber(bud_iter_delay) > 0 and tonumber(bud_iter_delay) < 1001 then rules.bud_iter_delay = tonumber(bud_iter_delay)
 	    else automata.show_popup(pname, "Bud iteration delay must be between 1 and 1000 -- you said: "..bud_iter_delay) return false end
         local side_branch_height = automata.get_player_setting(pname, "side_branch_height")
-        if not side_branch_height then rules.side_branch_height = 20
+        if not side_branch_height then rules.side_branch_height = 15
 	    elseif tonumber(side_branch_height) > 0 and tonumber(side_branch_height) < 1001 then rules.side_branch_height = tonumber(side_branch_height)
 	    else automata.show_popup(pname, "Side branch height must be between 1 and 1000 -- you said: "..side_branch_height) return false end
         local down_branch_height = automata.get_player_setting(pname, "down_branch_height")
-        if not down_branch_height then rules.down_branch_height = 5
+        if not down_branch_height then rules.down_branch_height = 15
 	    elseif tonumber(down_branch_height) > 0 and tonumber(down_branch_height) < 1001 then rules.down_branch_height = tonumber(down_branch_height)
-	    else automata.show_popup(pname, "Down branch height must be between 1 and 1000 -- you said: "..down_branch_height) return false end
+	    else automata.show_popup(pname, "Root depth must be between 1 and 1000 -- you said: "..down_branch_height) return false end
         local leaf_height = automata.get_player_setting(pname, "leaf_height")
-        if not leaf_height then rules.leaf_height = 19
+        if not leaf_height then rules.leaf_height = 14
 	    elseif tonumber(leaf_height) > 0 and tonumber(leaf_height) < 1001 then rules.leaf_height = tonumber(leaf_height)
 	    else automata.show_popup(pname, "Leaf height must be between 1 and 1000 -- you said: "..leaf_height) return false end
         local leaf_chance = automata.get_player_setting(pname, "leaf_chance")
@@ -1029,7 +1030,7 @@ function automata.rules_validate(pname, rule_override)
 	    elseif tonumber(leaf_chance) >= 0 and tonumber(leaf_chance) <= 1 then rules.leaf_chance = tonumber(leaf_chance)
 	    else automata.show_popup(pname, "Leaf chance must be between 0 and 1 -- you said: "..leaf_chance) return false end
         local fruit_chance = automata.get_player_setting(pname, "fruit_chance")
-        if not fruit_chance then rules.fruit_chance = 0.1
+        if not fruit_chance then rules.fruit_chance = 0.3
 	    elseif tonumber(fruit_chance) >= 0 and tonumber(fruit_chance) <= 1 then rules.fruit_chance = tonumber(fruit_chance)
 	    else automata.show_popup(pname, "Fruit chance must be between 0 and 1 -- you said: "..fruit_chance) return false end
     end
@@ -1478,7 +1479,7 @@ function automata.show_rc_form(pname)
                                 "field[8,3;2,1;down_branch_chance;Down branch;"..minetest.formspec_escape(down_branch_chance).."]" ..
                                 "field[6,4;2,1;bud_iter_delay;Bud delay;"..minetest.formspec_escape(bud_iter_delay).."]" ..
                                 "field[8,4;2,1;side_branch_height;Branch height;"..minetest.formspec_escape(side_branch_height).."]" ..
-                                "field[6,5;2,1;down_branch_height;Down height;"..minetest.formspec_escape(down_branch_height).."]" ..
+                                "field[6,5;2,1;down_branch_height;Root depth;"..minetest.formspec_escape(down_branch_height).."]" ..
                                 "field[8,5;2,1;leaf_height;Leaf height;"..minetest.formspec_escape(leaf_height).."]" ..
                                 "field[6,6;2,1;leaf_chance;Leaf chance;"..minetest.formspec_escape(leaf_chance).."]" ..
                                 "field[8,6;2,1;fruit_chance;Fruit chance;"..minetest.formspec_escape(fruit_chance).."]"
