@@ -1458,18 +1458,18 @@ function automata.show_rc_form(pname)
 		return true
 	end
 	if tab == "5" then --tree mode
-        local up_bud_chance = automata.get_player_setting(pname, "up_bud_chance") or ""
-        local up_branch_chance = automata.get_player_setting(pname, "up_branch_chance") or ""
-        local side_bud_chance = automata.get_player_setting(pname, "side_bud_chance") or ""
-        local side_branch_chance = automata.get_player_setting(pname, "side_branch_chance") or ""
-        local down_bud_chance = automata.get_player_setting(pname, "down_bud_chance") or ""
-        local down_branch_chance = automata.get_player_setting(pname, "down_branch_chance") or ""
-        local bud_iter_delay = automata.get_player_setting(pname, "bud_iter_delay") or ""
-        local side_branch_height = automata.get_player_setting(pname, "side_branch_height") or ""
-        local down_branch_height = automata.get_player_setting(pname, "down_branch_height") or ""
-        local leaf_height = automata.get_player_setting(pname, "leaf_height") or ""
-        local leaf_chance = automata.get_player_setting(pname, "leaf_chance") or ""
-        local fruit_chance = automata.get_player_setting(pname, "fruit_chance") or ""
+        local up_bud_chance = automata.get_player_setting(pname, "up_bud_chance") or "0.08"
+        local up_branch_chance = automata.get_player_setting(pname, "up_branch_chance") or "0.5"
+        local side_bud_chance = automata.get_player_setting(pname, "side_bud_chance") or "0.01"
+        local side_branch_chance = automata.get_player_setting(pname, "side_branch_chance") or "0.5"
+        local down_bud_chance = automata.get_player_setting(pname, "down_bud_chance") or "0.01"
+        local down_branch_chance = automata.get_player_setting(pname, "down_branch_chance") or "0.5"
+        local bud_iter_delay = automata.get_player_setting(pname, "bud_iter_delay") or "15"
+        local side_branch_height = automata.get_player_setting(pname, "side_branch_height") or "15"
+        local down_branch_height = automata.get_player_setting(pname, "down_branch_height") or "15"
+        local leaf_height = automata.get_player_setting(pname, "leaf_height") or "14"
+        local leaf_chance = automata.get_player_setting(pname, "leaf_chance") or "0.1"
+        local fruit_chance = automata.get_player_setting(pname, "fruit_chance") or "0.3"
 
         local f_tree_settings = "field[6,1;2,1;up_bud_chance;Up bud;"..minetest.formspec_escape(up_bud_chance).."]" ..
                                 "field[8,1;2,1;up branch_chance;Up branch;"..minetest.formspec_escape(up_branch_chance).."]" ..
