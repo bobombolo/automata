@@ -1319,7 +1319,7 @@ function automata.show_rc_form(pname)
 	if not gens then gens = "30" end
 	--trail
 	local trail = automata.get_player_setting(pname, "trail")
-	if not trail then trail = "default:dirt" end
+	if not trail then trail = "" end
 	--final
 	local final = automata.get_player_setting(pname, "final")
 	if not final then final = "" end
