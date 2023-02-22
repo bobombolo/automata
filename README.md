@@ -1,4 +1,4 @@
-# automata v.0.1.1
+# automata v.0.1.2
 ### A minetest mod for growing various cellular automata, including conway's game of life and giant procedural trees.
 Now with sound!
 
@@ -41,6 +41,9 @@ If worldedit is installed, this mod adds a chat command, "//owncells" which allo
 - zero-neighbor birth rules ( odd numbered NKS codes ) are implemented for cells inside the pattern's rectangular extent, not, obviously, for the entire infinite field. ways of faking this might be addressed in future releases but it is disclosed here that this implementation will have a unique effect on such rules' patterns compared to software that assumes an infinite field for each iteration...
 
 For other known issues and planned improvements see: https://github.com/bobombolo/automata/issues
+
+## New since v.0.1.1
+- sound to accompany each growth cycle
 
 ## New since v.0.1.0
 - tree mode has been added. Trees are an example of a non-totalistic, probabilistic 3D cellular automata (26n). The Tree tab allows the user to control the probabilities and heights of the growth.
