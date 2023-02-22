@@ -783,7 +783,7 @@ function automata.grow(pattern_id, pname)
     local pitch1 = cell_count % 12 / 12
     if pitch1 == 0 then pitch1 = 1 end
     minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch1, pos = base, max_hear_distance = 50}, true)
-    local pitch2 = birth_count % 12 / 12
+    local pitch2 = birth_count % 12 / 12 + 1
     if pitch2 == 0 then pitch2 = 1 end
     minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch2, pos = base, max_hear_distance = 50}, true)
     local pitch3 = death_count % 12 / 12
