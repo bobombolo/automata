@@ -785,13 +785,13 @@ function automata.grow(pattern_id, pname)
     --SOUND!
     local pitch1 = cell_count % 12 / 12
     if pitch1 == 0 then pitch1 = 1 end
-    local handle = minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch1}, true)
+    minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch1}, true)
     local pitch2 = birth_count % 12 / 12
     if pitch2 == 0 then pitch2 = 1 end
-    local handle = minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch2}, true)
+    minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch2}, true)
     local pitch3 = death_count % 12 / 12
     if pitch3 == 0 then pitch3 = 1 end
-    local handle = minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch3}, true)
+    minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch3}, true)
 	--update pattern values
 	local timer = (os.clock() - t1) * 1000
 	local values =  { pmin = {x=xmin,y=ymin,z=zmin}, pmax = {x=xmax,y=ymax,z=zmax}, 
