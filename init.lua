@@ -217,6 +217,7 @@ function automata.grow(pattern_id, pname)
 	local t1 = os.clock()
 	--update the pattern values: iteration, last_cycle
 	local iteration = automata.patterns[pattern_id].iteration +1
+    local base = automata.patterns[pattern_id].base
 	local death_list ={} --cells that will be set to rules.trail at the end of grow()
 	local birth_list = {} --cells that will be set to automata:active at the end of grow()
     local leaves_list = {} -- cells that will become leaves in tree mode at the end of grow()	
@@ -525,56 +526,52 @@ function automata.grow(pattern_id, pname)
 				    same_count = same_count + 1
 			    end
 		    end
-            local iter = automata.patterns[pattern_id].iteration
-            local base = automata.patterns[pattern_id].base
             local chance = math.random()
-            
             local bottom = neighborhood_vis.b + epos_vi
             local top = neighborhood_vis.t + epos_vi
             local north = neighborhood_vis.n + epos_vi
             local east = neighborhood_vis.e + epos_vi
             local south = neighborhood_vis.s + epos_vi
             local west = neighborhood_vis.w + epos_vi
-            
-            --if this block is on the top face of another block then it has a chance of growing if above the base
-            if old_indexes[bottom] and same_count == 1 and chance < rules.up_branch_chance and epos.y > base then
+            --if this block is on the top face of another block then it has a chance of growing if above the base.y
+            if old_indexes[bottom] and same_count == 1 and chance < rules.up_branch_chance and epos.y > base.y then
                 birth = true
 			elseif old_indexes[bottom] and chance < rules.up_bud_chance then
                 birth = true
             end
-            if old_indexes[north] and same_count == 1 and ( epos.y - base > rules.side_branch_height or epos.y < base - rules.down_branch_height )
+            if old_indexes[north] and same_count == 1 and ( epos.y - base.y > rules.side_branch_height or epos.y < base.y - rules.down_branch_height )
             and chance < rules.side_branch_chance then
                 birth = true
-			elseif old_indexes[north] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then    
+			elseif old_indexes[north] and iteration > rules.bud_iter_delay and chance < rules.side_bud_chance then    
             birth = true
             end
-            if old_indexes[south] and same_count == 1 and ( epos.y - base > rules.side_branch_height or epos.y < base - rules.down_branch_height )
+            if old_indexes[south] and same_count == 1 and ( epos.y - base.y > rules.side_branch_height or epos.y < base.y - rules.down_branch_height )
             and chance < rules.side_branch_chance then
                 birth = true
-            elseif old_indexes[south] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then
+            elseif old_indexes[south] and iteration > rules.bud_iter_delay and chance < rules.side_bud_chance then
                 birth = true
 			end
-            if old_indexes[east] and same_count == 1 and ( epos.y - base > rules.side_branch_height or epos.y < base - rules.down_branch_height )
+            if old_indexes[east] and same_count == 1 and ( epos.y - base.y > rules.side_branch_height or epos.y < base.y - rules.down_branch_height )
             and chance < rules.side_branch_chance then
                 birth = true
-            elseif old_indexes[east] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then
+            elseif old_indexes[east] and iteration > rules.bud_iter_delay and chance < rules.side_bud_chance then
                 birth = true
 			end
-            if old_indexes[west] and same_count == 1 and ( epos.y - base > rules.side_branch_height or epos.y < base - rules.down_branch_height )
+            if old_indexes[west] and same_count == 1 and ( epos.y - base.y > rules.side_branch_height or epos.y < base.y - rules.down_branch_height )
             and chance < rules.side_branch_chance then
                 birth = true
-            elseif old_indexes[west] and iter > rules.bud_iter_delay and chance < rules.side_bud_chance then
+            elseif old_indexes[west] and iteration > rules.bud_iter_delay and chance < rules.side_bud_chance then
                 birth = true
 			end
             --down branching occurs below the base
-            if old_indexes[top] and same_count == 1 and epos.y < base
+            if old_indexes[top] and same_count == 1 and epos.y < base.y
             and chance < rules.down_branch_chance then
                 birth = true
             elseif old_indexes[top] and chance < rules.down_bud_chance then
                 birth = true
             end
             --leaves
-            if birth == false and epos.y - base > rules.leaf_height and chance < rules.leaf_chance then
+            if birth == false and epos.y - base.y > rules.leaf_height and chance < rules.leaf_chance then
                leaves = true
             end
 		    if birth then
@@ -785,17 +782,17 @@ function automata.grow(pattern_id, pname)
     --SOUND!
     local pitch1 = cell_count % 12 / 12
     if pitch1 == 0 then pitch1 = 1 end
-    minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch1}, true)
+    minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch1, pos = base, max_hear_distance = 50}, true)
     local pitch2 = birth_count % 12 / 12
     if pitch2 == 0 then pitch2 = 1 end
-    minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch2}, true)
+    minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch2, pos = base, max_hear_distance = 50}, true)
     local pitch3 = death_count % 12 / 12
     if pitch3 == 0 then pitch3 = 1 end
-    minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch3}, true)
+    minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch3, pos = base, max_hear_distance = 50}, true)
 	--update pattern values
 	local timer = (os.clock() - t1) * 1000
 	local values =  { pmin = {x=xmin,y=ymin,z=zmin}, pmax = {x=xmax,y=ymax,z=zmax}, 
-				      cell_count = cell_count, emin = new_emin, emax = new_emax, base=automata.patterns[pattern_id].base,
+				      cell_count = cell_count, emin = new_emin, emax = new_emax, base=base,
 					  indexes = new_indexes, l_timer = timer, iteration = iteration,
 					  t_timer = automata.patterns[pattern_id].t_timer + timer,
 					  rules = rules, creator = pname
@@ -892,7 +889,7 @@ function automata.new_pattern(pname, offsets, rule_override)
 			vm:write_to_map()
 			vm:update_map()
 		end
-        local base = pmin.y --used by tree logic
+        local base = pmin --used by tree logic and sound
 		local timer = (os.clock() - t1) * 1000
 		--add the cell list to the active cell registry with the gens, rules hash, and cell list
 		local values = { creator=pname, status="active", iteration=0, rules=rules, base=base, 
