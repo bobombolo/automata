@@ -749,12 +749,16 @@ function automata.grow(pattern_id, pname)
 	    end
     end
 	--apply deaths to data[]
+    local death_count = 0
 	for dpos_vi, dpos in next, death_list do
-		data[dpos_vi] = c_trail
+		death_count = death_count + 1
+        data[dpos_vi] = c_trail
 	end
 	--apply births to data[]
+    local birth_count = 0
 	for bpos_vi, bpos in next, birth_list do
-		--test for destructive mode and if the node is occupied
+		birth_count = birth_count + 1
+        --test for destructive mode and if the node is occupied
 		if rules.destruct == "true" or data[bpos_vi] == c_air or data[bpos_vi] == c_leaves or data[bpos_vi] == c_apple then
 			--test for final iteration
 			if is_final == 1 then data[bpos_vi] = c_final
@@ -775,10 +779,19 @@ function automata.grow(pattern_id, pname)
             end
 	    end
 	end
-    
 	vm:set_data(data)
 	vm:write_to_map()
 	vm:update_map()
+    --SOUND!
+    local pitch1 = cell_count % 12 / 12
+    if pitch1 == 0 then pitch1 = 1 end
+    local handle = minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch1}, true)
+    local pitch2 = birth_count % 12 / 12
+    if pitch2 == 0 then pitch2 = 1 end
+    local handle = minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch2}, true)
+    local pitch3 = death_count % 12 / 12
+    if pitch3 == 0 then pitch3 = 1 end
+    local handle = minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch3}, true)
 	--update pattern values
 	local timer = (os.clock() - t1) * 1000
 	local values =  { pmin = {x=xmin,y=ymin,z=zmin}, pmax = {x=xmax,y=ymax,z=zmax}, 
