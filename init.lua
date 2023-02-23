@@ -780,16 +780,17 @@ function automata.grow(pattern_id, pname)
 	vm:write_to_map()
 	vm:update_map()
     --SOUND!
+    local sound = rules.sound
     local pitch1 = cell_count % 12
     -- got this number from https://music.stackexchange.com/questions/49803/how-to-reference-or-calculate-the-percentage-pitch-change-between-two-notes
     pitch1 = ( 1.0594630943592952645618252949463 ^ pitch1 ) / 2 -- divide by 2 to drop an octave?
-    minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch1, pos = base, max_hear_distance = 50}, true)
+    minetest.sound_play({name = sound},{to_player = pname, pitch = pitch1, pos = base, max_hear_distance = 50}, true)
     local pitch2 = birth_count % 12
     pitch2 = 1.0594630943592952645618252949463 ^ pitch2
-    minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch2, pos = base, max_hear_distance = 50}, true)
+    minetest.sound_play({name = sound},{to_player = pname, pitch = pitch2, pos = base, max_hear_distance = 50}, true)
     local pitch3 = death_count % 12
     pitch3 = 1.0594630943592952645618252949463 ^ pitch3
-    minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch3, pos = base, max_hear_distance = 50}, true)
+    minetest.sound_play({name = sound},{to_player = pname, pitch = pitch3, pos = base, max_hear_distance = 50}, true)
 	--update pattern values
 	local timer = (os.clock() - t1) * 1000
 	local values =  { pmin = {x=xmin,y=ymin,z=zmin}, pmax = {x=xmax,y=ymax,z=zmax}, 
@@ -946,6 +947,9 @@ function automata.rules_validate(pname, rule_override)
 	local destruct = automata.get_player_setting(pname, "destruct")
 	if not destruct then rules.destruct = "false" 
 	else rules.destruct = destruct end
+	local sound = automata.get_player_setting(pname, "sound")
+	if not sound then rules.sound = "gong"
+	else rules.sound = sound end
 	--then validate fields common to 1D and 2D and importing 2D .LIF files (tab 4)
 	if tab == "1" or tab == "2" or tab == "4" then
 		--grow_distance
@@ -1337,6 +1341,13 @@ function automata.show_rc_form(pname)
 	--destructive
 	local destruct = automata.get_player_setting(pname, "destruct")
 	if not destruct then destruct = "false" end
+	local sound_id
+	local sound = automata.get_player_setting(pname, "sound")
+	if not sound then sound_id = 1
+	else 
+		local idx = {gong=1,darkboom=2,bowls=3,warblast=4}
+		sound_id = idx[sound]
+	end
 	--set some formspec sections for re-use on all tabs
 	local f_header = 			"size[12,10]" ..
 								"tabheader[0,0;tab;1D, 2D, 3D, Import, Tree, Manage;"..tab.."]"..
@@ -1346,7 +1357,9 @@ function automata.show_rc_form(pname)
 	local f_grow_settings = 	"field[1,5;4,1;trail;Trail Block (eg: default:dirt);"..minetest.formspec_escape(trail).."]" ..
 								"field[1,6;4,1;final;Final Block (eg: default:mese);"..minetest.formspec_escape(final).."]" ..
 								"checkbox[0.7,7.5;destruct;Destructive?;"..destruct.."]"..
-								"field[1,7;4,1;gens;Generations (eg: 30);"..minetest.formspec_escape(gens).."]"
+								"field[1,7;4,1;gens;Generations (eg: 30);"..minetest.formspec_escape(gens).."]" ..
+								"label[8,7.4; Sound]"..
+								"dropdown[8,7.8;4,1;sound;gong,darkboom,bowls,warblast;"..sound_id.."]"
 	--1D,2D,and 3D
 	--make sure the inactive cell registry is not empty
 	local activate_section = 	"label[1,8.5;No inactive cells in map]"
