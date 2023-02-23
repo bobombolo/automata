@@ -780,14 +780,15 @@ function automata.grow(pattern_id, pname)
 	vm:write_to_map()
 	vm:update_map()
     --SOUND!
-    local pitch1 = cell_count % 12 / 12
-    if pitch1 == 0 then pitch1 = 1 end
+    local pitch1 = cell_count % 12
+    -- got this number from https://music.stackexchange.com/questions/49803/how-to-reference-or-calculate-the-percentage-pitch-change-between-two-notes
+    pitch1 = ( 1.0594630943592952645618252949463 ^ pitch1 ) / 2 -- divide by 2 to drop an octave?
     minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch1, pos = base, max_hear_distance = 50}, true)
-    local pitch2 = birth_count % 12 / 12 + 1
-    if pitch2 == 0 then pitch2 = 1 end
+    local pitch2 = birth_count % 12
+    pitch2 = 1.0594630943592952645618252949463 ^ pitch2
     minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch2, pos = base, max_hear_distance = 50}, true)
-    local pitch3 = death_count % 12 / 12
-    if pitch3 == 0 then pitch3 = 1 end
+    local pitch3 = death_count % 12
+    pitch3 = 1.0594630943592952645618252949463 ^ pitch3
     minetest.sound_play({name = "gong"},{to_player = pname, pitch = pitch3, pos = base, max_hear_distance = 50}, true)
 	--update pattern values
 	local timer = (os.clock() - t1) * 1000
