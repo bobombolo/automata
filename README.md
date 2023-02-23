@@ -43,7 +43,7 @@ If worldedit is installed, this mod adds a chat command, "//owncells" which allo
 For other known issues and planned improvements see: https://github.com/bobombolo/automata/issues
 
 ## New since v.0.1.1
-- sound to accompany each growth cycle
+- sound to accompany each growth cycle that is tuned to the pattern itself from total cell count, birth count and death count
 
 ## New since v.0.1.0
 - tree mode has been added. Trees are an example of a non-totalistic, probabilistic 3D cellular automata (26n). The Tree tab allows the user to control the probabilities and heights of the growth.
