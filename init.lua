@@ -186,10 +186,11 @@ function automata.process_queue()
 	--print(dump(automata.patterns[pattern_id]))
 		if automata.grow_queue[pattern_id].lock == false --pattern is not paused or finished
 		and minetest.get_player_by_name(v.creator) --player in game
-		and ( (os.clock() - automata.grow_queue[pattern_id].last_grow) 
-			>= automata.grow_queue[pattern_id].size / 100
-		or (os.clock() - automata.grow_queue[pattern_id].last_grow) 
-			>= math.log(automata.grow_queue[pattern_id].size) )
+		--commenting out the throttling
+		--and ( (os.clock() - automata.grow_queue[pattern_id].last_grow) 
+		--	>= automata.grow_queue[pattern_id].size / 100
+		--or (os.clock() - automata.grow_queue[pattern_id].last_grow) 
+		--	>= math.log(automata.grow_queue[pattern_id].size) )
 		then
 			--lock pattern and do the grow()
 			automata.grow_queue[pattern_id].lock = true
