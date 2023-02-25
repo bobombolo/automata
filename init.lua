@@ -782,10 +782,11 @@ function automata.grow(pattern_id, pname)
 	vm:update_map()
     --SOUND!
     local sound = rules.sound
+    local soundpos = { x=(xmin+xmax)/2, y=(ymin+ymax)/2, z=(zmin+zmax)/2 }
     local pitch1 = cell_count % 12
     -- got this number from https://music.stackexchange.com/questions/49803/how-to-reference-or-calculate-the-percentage-pitch-change-between-two-notes
     pitch1 = ( 1.0594630943592952645618252949463 ^ pitch1 ) / 2 -- divide by two to get an octave lower?
-    minetest.sound_play({name = sound},{to_player = pname, pitch = pitch1, pos = base, max_hear_distance = 50}, true)
+    minetest.sound_play({name = sound},{pitch = pitch1, pos = soundpos, max_hear_distance = 100}, true)
     --local pitch2 = birth_count % 12
     --pitch2 = 1.0594630943592952645618252949463 ^ pitch2
     --minetest.sound_play({name = sound},{to_player = pname, pitch = pitch2, pos = base, max_hear_distance = 50}, true)
