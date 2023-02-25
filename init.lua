@@ -162,6 +162,7 @@ function automata.in_patterns(pos, delete)
 end
 -- check if a position is in the pattern list, second arg deletes it
 function automata.in_inactive(pos, delete)
+	if not automata.inactive then return false end
 	for hash, entry in next, automata.inactive do
 		if pos.x == entry.pos.x and pos.y == entry.pos.y and pos.z == entry.pos.z then
 			if delete == true then
@@ -171,10 +172,6 @@ function automata.in_inactive(pos, delete)
 		end
 	end
 	return false
-end
--- check if a position is in the inactive list, second arg deletes it
-function automata.in_inactive(pos, delete)
-	
 end
 -- REGISTER GLOBALSTEP
 minetest.register_globalstep(function(dtime)
