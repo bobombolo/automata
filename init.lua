@@ -180,11 +180,14 @@ end)
 --the grow_queue logic
 function automata.process_queue()
 	for pattern_id, v in next, automata.grow_queue do
-	--print(dump(automata.patterns[pattern_id]))
+		--print(dump(automata.patterns[pattern_id]))
+		local delay = automata.patterns[pattern_id].rules.delay / 1000
+		--if not delay then delay = 0 end
 		if automata.grow_queue[pattern_id].lock == false --pattern is not paused or finished
 		and minetest.get_player_by_name(v.creator) --player in game
 		--commenting out the throttling
-		--and ( (os.clock() - automata.grow_queue[pattern_id].last_grow) 
+		and (os.clock() - automata.grow_queue[pattern_id].last_grow) 
+		>= delay 
 		--	>= automata.grow_queue[pattern_id].size / 100
 		--or (os.clock() - automata.grow_queue[pattern_id].last_grow) 
 		--	>= math.log(automata.grow_queue[pattern_id].size) )
@@ -931,6 +934,11 @@ function automata.rules_validate(pname, rule_override)
 	if not gens then rules.gens = 100
 	elseif tonumber(gens) > 0 and tonumber(gens) < 1001 then rules.gens = tonumber(gens)
 	else automata.show_popup(pname, "Generations must be between 1 and 1000-- you said: "..gens) return false end
+	--delay
+	local delay = automata.get_player_setting(pname, "delay")
+	if not delay then rules.delay = 0
+	elseif tonumber(delay) >= 0 and tonumber(delay) < 10001 then rules.delay = tonumber(delay)
+	else automata.show_popup(pname, "Delay must be between 1 and 10000-- you said: "..delay) return false end
 	--trail
 	local trail = automata.get_player_setting(pname, "trail")
     if not trail then rules.trail = "air" 
@@ -1330,6 +1338,9 @@ function automata.show_rc_form(pname)
 	--gens
 	local gens = automata.get_player_setting(pname, "gens")
 	if not gens then gens = "30" end
+	--delay
+	local delay = automata.get_player_setting(pname, "delay")
+	if not delay then delay = "0" end
 	--trail
 	local trail = automata.get_player_setting(pname, "trail")
 	if not trail then trail = "" end
@@ -1355,7 +1366,8 @@ function automata.show_rc_form(pname)
 	local f_grow_settings = 	"field[1,5;4,1;trail;Trail Block (eg: default:dirt);"..minetest.formspec_escape(trail).."]" ..
 								"field[1,6;4,1;final;Final Block (eg: default:mese);"..minetest.formspec_escape(final).."]" ..
 								"checkbox[0.7,7.5;destruct;Destructive?;"..destruct.."]"..
-								"field[1,7;4,1;gens;Generations (eg: 30);"..minetest.formspec_escape(gens).."]" ..
+								"field[1,7;2,1;gens;Generations (eg: 30);"..minetest.formspec_escape(gens).."]" ..
+								"field[3,7;2,1;delay;Delay (ms);"..minetest.formspec_escape(delay).."]" ..
 								"label[8,7.4; Sound]"..
 								"dropdown[8,7.8;4,1;sound;gong,darkboom,bowls,warblast;"..sound_id.."]"
 	--1D,2D,and 3D
