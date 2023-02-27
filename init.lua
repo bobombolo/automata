@@ -221,10 +221,9 @@ function automata.grow(pattern_id, pname)
     local leaves_list = {} -- cells that will become leaves in tree mode at the end of grow()	
     local empty_neighbors = {} --non-active neighbor cell list to be tested for births
 	local cell_count = 0 --since the indexes is keyed by vi, can't do #indexes
-	local xmin,ymin,zmin,xmax,ymax,zmax --for the new pmin and pmax -- used to pace grow()
 	--load the rules
 	local rules = automata.patterns[pattern_id].rules
-	local is_final = 0
+	local is_final = false
 	if iteration == rules.gens then is_final = 1 end
 	--content types to reduce lookups
 	local c_trail
@@ -260,6 +259,12 @@ function automata.grow(pattern_id, pname)
 	if rules.neighbors == 2 then code1d = automata.toBits(rules.code1d, 8) end
 	local old_pmin = automata.patterns[pattern_id].pmin
 	local old_pmax = automata.patterns[pattern_id].pmax
+	local xmin = old_pmin.x
+	local ymin = old_pmin.y
+	local zmin = old_pmin.z
+	local xmax = old_pmax.x
+	local ymax = old_pmax.y
+	local zmax = old_pmax.z
 	local new_emin, new_emax = vm:read_from_map({x=old_pmin.x-e, y=old_pmin.y-e, z=old_pmin.z-e},
 												{x=old_pmax.x+e, y=old_pmax.y+e, z=old_pmax.z+e} )
 	local new_area = VoxelArea:new({MinEdge=new_emin, MaxEdge=new_emax})
@@ -298,16 +303,12 @@ function automata.grow(pattern_id, pname)
 	local function add_to_new_cell_list(vi, p)
 		new_indexes[vi] = p
 		cell_count = cell_count + 1
-		if xmin == nil then
-			xmin = p.x ; xmax = p.x ; ymin = p.y ; ymax = p.y ; zmin = p.z ; zmax = p.z
-		else
-			if p.x > xmax then xmax = p.x end
-			if p.x < xmin then xmin = p.x end
-			if p.y > ymax then ymax = p.y end
-			if p.y < ymin then ymin = p.y end
-			if p.z > zmax then zmax = p.z end
-			if p.z < zmin then zmin = p.z end
-		end
+		if p.x > xmax then xmax = p.x end
+		if p.x < xmin then xmin = p.x end
+		if p.y > ymax then ymax = p.y end
+		if p.y < ymin then ymin = p.y end
+		if p.z > zmax then zmax = p.z end
+		if p.z < zmin then zmin = p.z end
 	end
 	--start compiling the absolute position and index offsets that represent neighbors and growth
 	local neighborhood= {}
@@ -664,7 +665,7 @@ function automata.grow(pattern_id, pname)
 				    death_list[new_pos_vi] = pos --with grow_distance ~= 0, the old pos dies leaving rules.trail
 			    else
 				    --in the case that this is the final iteration, we need to pass it to the life list afterall
-				    if is_final == 1 then
+				    if is_final then
 					    birth_list[new_pos_vi] = pos --when node is actually set we will add to new_indexes
 				    else
 					    add_to_new_cell_list(new_pos_vi, pos) --bypass birth_list go straight to new_indexes
@@ -752,15 +753,17 @@ function automata.grow(pattern_id, pname)
 	--apply births to data[]
     local birth_count = 0
 	for bpos_vi, bpos in next, birth_list do
-		birth_count = birth_count + 1
-        --test for destructive mode and if the node is occupied
+		--test for destructive mode and if the node is occupied
 		if rules.destruct == "true" or data[bpos_vi] == c_air or data[bpos_vi] == c_leaves or data[bpos_vi] == c_apple then
+			birth_count = birth_count + 1
 			--test for final iteration
-			if is_final == 1 then data[bpos_vi] = c_final
+			if is_final then data[bpos_vi] = c_final
 			else data[bpos_vi] = c_automata
 			end
 			--add to new_indexes even if final so that we can resume
 			add_to_new_cell_list(bpos_vi, bpos)
+		else
+			data[bpos_vi] = c_trail
 		end
 	end
     --set leaves
@@ -783,13 +786,9 @@ function automata.grow(pattern_id, pname)
     local pitch1 = cell_count % 12
     -- got this number from https://music.stackexchange.com/questions/49803/how-to-reference-or-calculate-the-percentage-pitch-change-between-two-notes
     pitch1 = ( 1.0594630943592952645618252949463 ^ pitch1 ) / 2 -- divide by two to get an octave lower?
-    minetest.sound_play({name = sound},{pitch = pitch1, pos = soundpos, max_hear_distance = 100}, true)
-    --local pitch2 = birth_count % 12
-    --pitch2 = 1.0594630943592952645618252949463 ^ pitch2
-    --minetest.sound_play({name = sound},{to_player = pname, pitch = pitch2, pos = base, max_hear_distance = 50}, true)
-    --local pitch3 = death_count % 12
-    --pitch3 = 1.0594630943592952645618252949463 ^ pitch3
-    --minetest.sound_play({name = sound},{to_player = pname, pitch = pitch3, pos = base, max_hear_distance = 50}, true)
+    if birth_count > 0 then
+		minetest.sound_play({name = sound},{pitch = pitch1, pos = soundpos, max_hear_distance = 100}, true)
+	end
 	--update pattern values
 	local timer = (os.clock() - t1) * 1000
 	local values =  { pmin = {x=xmin,y=ymin,z=zmin}, pmax = {x=xmax,y=ymax,z=zmax}, 
@@ -1525,8 +1524,7 @@ function automata.show_rc_form(pname)
 				patterns = 	patterns..","..minetest.formspec_escape(k
 							.." ["..v.status.."] gen:"..v.iteration.." cells:"
 							..v.cell_count.." time:"..math.ceil(v.t_timer).."ms min:"
-							..(pmin.x or "nil").."."..(pmin.y or "nil").."."..(pmin.z or "nil")
-							.." max:"..(pmax.x or "nil").."."..(pmax.y or nil).."."..(pmax.z or "nil") )
+							..pmin.x.."."..pmin.y.."."..pmin.z.." max:"..pmax.x.."."..pmax.y.."."..pmax.z )
 				automata.open_tab6[pname][i]=k --need this table to decode the form's pid_ids back to pattern_ids
 			end
 		end
