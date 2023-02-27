@@ -763,7 +763,7 @@ function automata.grow(pattern_id, pname)
 			--add to new_indexes even if final so that we can resume
 			add_to_new_cell_list(bpos_vi, bpos)
 		else
-			data[bpos_vi] = c_trail
+			data[bpos_vi] = c_final
 		end
 	end
     --set leaves
