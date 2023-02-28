@@ -229,22 +229,8 @@ function automata.grow(pattern_id, pname)
 	local is_final = false
 	if iteration == rules.gens then is_final = true end
 	--content types to reduce lookups
-	local c_trail
-	local c_final
-	local rainbow = { "black","brown","dark_green","dark_grey","grey","white","pink",
-					  "red","orange","yellow","green","cyan","blue","magenta","violet"}
-	if rules.trail == "RAINBOW" then 
-		c_trail = "wool:"..rainbow[ iteration - 1 - ( #rainbow * math.floor((iteration - 1) / #rainbow) ) + 1 ]
-		c_trail = minetest.get_content_id(c_trail)	
-		if rules.final == "RAINBOW" then
-			c_final = c_trail
-		else
-			c_final = minetest.get_content_id(rules.final)
-		end
-	else
-		c_trail = minetest.get_content_id(rules.trail)
-		c_final = minetest.get_content_id(rules.final)
-	end
+	local c_trail = minetest.get_content_id(rules.trail)
+	local c_final = minetest.get_content_id(rules.final)
 	local c_air      = minetest.get_content_id("air")
 	local c_automata = minetest.get_content_id("automata:active")
     local c_leaves
@@ -917,33 +903,16 @@ function automata.new_pattern(pname, offsets, rule_override)
 		return false 
 	end
 end
-function automata.is_valid_content_id(node_type)
-	local list = {}
-	table.insert(list, "default:glass")
-	--generate a list of all registered nodes that are simple blocks
-	for name, def in pairs(minetest.registered_nodes) do
-        if def.drawtype == "normal" and string.sub(name, 1, 9) ~= "automata:" then
-			table.insert(list, name)
-		end
-	end
-	
-    for k,v in pairs(list) do
-        if v == node_type then
-            return true
-        end
-    end
-    --print(dump(list))
-    return false
-end
 function automata.get_valid_blocks()
 	local list = {}
-	table.insert(list, "")
-	table.insert(list, "default:glass")
+	list[0] = ""
+	list[minetest.get_content_id("default:glass")] = "default:glass"
 	for name, def in pairs(minetest.registered_nodes) do
         if def.drawtype == "normal" and string.sub(name, 1, 9) ~= "automata:" then
-			table.insert(list, name)
+			list[minetest.get_content_id(name)] = name
 		end
 	end
+	--print(dump(list))
 	return list
 end
 -- called when new pattern is created
@@ -965,13 +934,11 @@ function automata.rules_validate(pname, rule_override)
 	--trail
 	local trail = automata.get_player_setting(pname, "trail")
     if not trail then rules.trail = "air" 
-	elseif trail == "RAINBOW" or automata.is_valid_content_id(trail) then rules.trail = trail
-	else automata.show_popup(pname, trail.." is not a valid trail block type") return false end
+    else rules.trail = trail end
 	--final
 	local final = automata.get_player_setting(pname, "final")
-	if not final then rules.final = rules.trail 
-	elseif automata.is_valid_content_id(final) then rules.final = final
-	else automata.show_popup(pname, final.." is not a valid final block type") return false end
+	if not final then rules.final = rules.trail
+	else rules.final = final end
 	--destructive
 	local destruct = automata.get_player_setting(pname, "destruct")
 	if not destruct then rules.destruct = "false" 
@@ -1207,19 +1174,21 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 		--item image selection form
 		if formname == "automata:image_items" then
-			--print(dump(fields))
 			if fields.exit == "Cancel" then
 				automata.show_rc_form(pname)
 				return true
 			else
-				for k,v in pairs(fields) do
+				local list = automata.get_valid_blocks()
+				for k,_ in pairs(fields) do
 					if string.sub(k, 1, 5) == "trail" then
-						automata.player_settings[pname].trail = v
+						local cid = tonumber(string.sub(k, 6, string.len(k)))
+						automata.player_settings[pname].trail = list[cid]
 						automata.show_rc_form(pname)
 						return true
 					end
 					if string.sub(k, 1, 5) == "final" then
-						automata.player_settings[pname].final = v
+						local cid = tonumber(string.sub(k, 6, string.len(k)))
+						automata.player_settings[pname].final = list[cid]
 						automata.show_rc_form(pname)
 						return true
 					end
@@ -1237,17 +1206,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			if old_tab and old_tab ~= automata.get_player_setting(pname, "tab") then
 				automata.show_rc_form(pname)
 				return true
-			end	
+			end
 			if fields.trail then
 				local blocks = automata.get_valid_blocks()
-				local trail = automata.get_player_setting(pname, "trail")
-				if not trail then trail = "" end
 				automata.show_item_images(pname, blocks, "trail")
 			end
 			if fields.final then
 				local blocks = automata.get_valid_blocks()
-				local final = automata.get_player_setting(pname, "final")
-				if not final then final = "" end
 				automata.show_item_images(pname, blocks, "final")
 			end
 			--if a lif was clicked show the popup form summary
@@ -1374,18 +1339,16 @@ function automata.get_player_setting(pname, setting)
 end
 function automata.show_item_images(pname, items, setting)
 	local f_images = ""
-	local unique = 0
 	local i = 1
 	local j = 1
-	for _, item in ipairs(items) do
-		f_images = f_images .. "item_image_button["..i..","..j..";1,1;"..item..";"..setting..unique..";"..item.."]"
+	for cid, item in pairs(items) do
+		f_images = f_images .. "item_image_button["..i..","..j..";1,1;"..item..";"..setting..cid..";]"
 		if i < 12 then
 			i = i + 1
 		else
 			i = 1
 			j = j + 1
 		end
-		unique = unique + 1
 	end
 	local f_body = "size[14,10]" ..
 					"button_exit[12,0.01;2,1;exit;Cancel]"
@@ -1444,9 +1407,9 @@ function automata.show_rc_form(pname)
 								" y= "..math.floor(ppos.y).." z= "..math.floor(ppos.z).." and mostly facing "..dir.."]"
 	--1D, 2D, 3D, Import, Tree
 	local f_grow_settings = 	"label[1,4.7; Trail Block]"..
-								"item_image_button[3,4.7;0.8,0.8;"..trail..";trail;"..minetest.formspec_escape(trail).."]" ..
+								"item_image_button[3,4.7;0.8,0.8;"..trail..";trail;]" ..
 								"label[1,5.5; Final Block]"..
-								"item_image_button[3,5.5;0.8,0.8;"..final..";final;"..minetest.formspec_escape(final).."]" ..
+								"item_image_button[3,5.5;0.8,0.8;"..final..";final;]" ..
 								"checkbox[0.7,7.5;destruct;Destructive?;"..destruct.."]"..
 								"field[1,7;2,1;gens;Generations;"..minetest.formspec_escape(gens).."]" ..
 								"field[3,7;2,1;delay;Delay (ms);"..minetest.formspec_escape(delay).."]" ..
