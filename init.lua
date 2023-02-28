@@ -908,6 +908,7 @@ function automata.new_pattern(pname, offsets, rule_override)
 end
 function automata.is_valid_content_id(node_type)
 	local list = {}
+	table.insert(list, "default:glass")
 	--generate a list of all registered nodes that are simple blocks
 	for name, def in pairs(minetest.registered_nodes) do
         if def.drawtype == "normal" and string.sub(name, 1, 9) ~= "automata:" then
@@ -922,6 +923,17 @@ function automata.is_valid_content_id(node_type)
     end
     --print(dump(list))
     return false
+end
+function automata.get_valid_blocks()
+	local list = {}
+	table.insert(list, "")
+	table.insert(list, "default:glass")
+	for name, def in pairs(minetest.registered_nodes) do
+        if def.drawtype == "normal" and string.sub(name, 1, 9) ~= "automata:" then
+			table.insert(list, name)
+		end
+	end
+	return list
 end
 -- called when new pattern is created
 function automata.rules_validate(pname, rule_override)
@@ -1182,6 +1194,25 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 			return true
 		end
+		--item image selection form
+		if formname == "automata:image_items" then
+			print(dump(fields))
+			if fields.exit == "Cancel" then
+				automata.show_rc_form(pname)
+				return true
+			end
+			if fields.trail then
+				automata.player_settings[pname].trail = fields.trail
+				automata.show_rc_form(pname)
+				return true
+			end
+			if fields.final then
+				automata.player_settings[pname].final = fields.final
+				automata.show_rc_form(pname)
+				return true
+			end
+			return true
+		end
 		--the main form
 		if formname == "automata:rc_form" then 
 			-- if any tab but 6 selected unlist the player as having tab6 open
@@ -1193,6 +1224,18 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				automata.show_rc_form(pname)
 				return true
 			end	
+			if fields.trail then
+				local blocks = automata.get_valid_blocks()
+				local trail = automata.get_player_setting(pname, "trail")
+				if not trail then trail = "" end
+				automata.show_item_images(pname, blocks, "trail")
+			end
+			if fields.final then
+				local blocks = automata.get_valid_blocks()
+				local final = automata.get_player_setting(pname, "final")
+				if not final then final = "" end
+				automata.show_item_images(pname, blocks, "final")
+			end
 			--if a lif was clicked show the popup form summary
 			if fields.lif_id and string.sub(fields.lif_id, 1, 4) == "DCL:" then
 				automata.show_lif_summary(pname)
@@ -1315,6 +1358,28 @@ function automata.get_player_setting(pname, setting)
 		return false
 	end
 end
+function automata.show_item_images(pname, items, setting)
+	local f_images = ""
+	local i = 1
+	local j = 1
+	for _, item in ipairs(items) do
+		f_images = f_images .. "item_image_button["..i..","..j..";1,1;"..item..";"..setting..";"..item.."]"
+		if i < 12 then
+			i = i + 1
+		else
+			i = 1
+			j = j + 1
+		end
+		
+	end
+	local f_body = "size[14,10]" ..
+					"button_exit[12,0.01;2,1;exit;Cancel]"
+	print(f_images)	
+	minetest.show_formspec(pname,   "automata:image_items",
+                                    f_body..f_images
+	)
+	return true
+end
 -- show the main remote control form
 function automata.show_rc_form(pname)
     local player = minetest.get_player_by_name(pname)
@@ -1363,10 +1428,12 @@ function automata.show_rc_form(pname)
 								"label[0,0;You are at x= "..math.floor(ppos.x)..
 								" y= "..math.floor(ppos.y).." z= "..math.floor(ppos.z).." and mostly facing "..dir.."]"
 	--1D, 2D, 3D, Import, Tree
-	local f_grow_settings = 	"field[1,5;4,1;trail;Trail Block (eg: default:dirt);"..minetest.formspec_escape(trail).."]" ..
-								"field[1,6;4,1;final;Final Block (eg: default:mese);"..minetest.formspec_escape(final).."]" ..
+	local f_grow_settings = 	"label[1,4.7; Trail Block]"..
+								"item_image_button[3,4.7;0.8,0.8;"..trail..";trail;"..minetest.formspec_escape(trail).."]" ..
+								"label[1,5.5; Final Block]"..
+								"item_image_button[3,5.5;0.8,0.8;"..final..";final;"..minetest.formspec_escape(final).."]" ..
 								"checkbox[0.7,7.5;destruct;Destructive?;"..destruct.."]"..
-								"field[1,7;2,1;gens;Generations (eg: 30);"..minetest.formspec_escape(gens).."]" ..
+								"field[1,7;2,1;gens;Generations;"..minetest.formspec_escape(gens).."]" ..
 								"field[3,7;2,1;delay;Delay (ms);"..minetest.formspec_escape(delay).."]" ..
 								"label[8,7.4; Sound]"..
 								"dropdown[8,7.8;4,1;sound;gong,darkboom,bowls,warblast;"..sound_id.."]"
@@ -1394,7 +1461,7 @@ function automata.show_rc_form(pname)
 			local idx = {x=1,y=2,z=3}
 			grow_axis_id = idx[grow_axis]
 		end
-		local f_grow_distance = "field[1,4;4,1;grow_distance;Grow Distance (-1, 0, 1, 2 ...);"..minetest.formspec_escape(grow_distance).."]"
+		local f_grow_distance = "field[1,4;2,1;grow_distance;Grow Distance;"..minetest.formspec_escape(grow_distance).."]"
 		local f_grow_axis = 	"label[1,2.5; Growth Axis]"..
 								"dropdown[3,2.5;1,1;grow_axis;x,y,z;"..grow_axis_id.."]"
 		--fields specific to 1D
