@@ -16,11 +16,13 @@ This mod provides a "Programmable" Cellular Automata block (Inactive Cell) which
 ![screenshot_171106351](https://cloud.githubusercontent.com/assets/12679496/8151532/cc76388c-12cc-11e5-8b88-5fb614530cc9.png) ![screenshot_170757605](https://cloud.githubusercontent.com/assets/12679496/8151497/23d0be64-12cc-11e5-9de6-b205246f328f.png)
 
 ### The Rules Form
-"Using" the Remote will bring up a form, this form can be left blank to default to Conway's Game of Life rules. Otherwise custom rules can be entered in "code" in the survival/birth format, for example, conway cells are 8 neighbors, rule 23/3 which means if there are 3 neighbors an empty cell turns on, and already-active cells stay on if they have two or three neighbors, otherwise they turn off. (there are many online collections of Game of Life entities: http://www.argentum.freeserve.co.uk/lex.htm )
+"Using" the Remote will bring up a form, Cstom rules can be entered in "code" in the survival/birth format, for example, conway cells are 8 neighbors, rule 23/3 which means if there are 3 neighbors an empty cell turns on, and already-active cells stay on if they have two or three neighbors, otherwise they turn off. (there are many online collections of Game of Life entities: http://www.argentum.freeserve.co.uk/lex.htm )
 
 Remember that zero is a valid option (for survival at least, not birth -- in this version it is ignored) so that single nodes will grow with rules like n=4, 01234/14. The rest of the form fields also have defaults, but if set allow you to control the direction of growth, the plane that the automata operate in, the trail of dead cells they leave behind (can be set to "air"), etc.
 
 1D automata follow the NKS "rules" as per: http://www.wolframscience.com/nksonline/page-53 . They also require an additional parameter for the calculation axis, obviously the growth axis and calculation axis can't be the same. 2D automata only need the growth axis set, even if growth is set to zero, because the calculation plane is implied by the growth axis (perpendicular to it). 3D automata actually have less options since their growth and calculation directions are all axis. For automata to grow properly, their trail should either be set to air, or they need to be set to "destructive" so that any trail they leave doesn't impede their natural growth in a later iteration.
+
+Trees are an example of a 3D automata with non-totalistic rules meaning that not just the total neighbor count is considered but rather specific neighbor states are considered like in the case of 1D automata. Trees are also probabilistic and these probabilities can be adjusted in the form to get different growth characteristics.
 
 The remote now has a "Manage" tab which allows you to see your own patterns and pause or resume them. Exporting from that tab is soon to come.
 
@@ -38,12 +40,14 @@ If worldedit is installed, this mod adds a chat command, "//owncells" which allo
 
 ## Known Issues
 - Large patterns (particularly 3D patterns, can cause serious lag)
+- 3D patterns sometimes become assymmetrical even when started from a single cell.
 - zero-neighbor birth rules ( odd numbered NKS codes ) are implemented for cells inside the pattern's rectangular extent, not, obviously, for the entire infinite field. ways of faking this might be addressed in future releases but it is disclosed here that this implementation will have a unique effect on such rules' patterns compared to software that assumes an infinite field for each iteration...
 
 For other known issues and planned improvements see: https://github.com/bobombolo/automata/issues
 
 ## New since v.0.1.1
 - sound to accompany each growth cycle that is tuned to the pattern itself from total cell count, birth count and death count
+- the speed of growth can now be controlled by setting a delay in miliseconds.
 
 ## New since v.0.1.0
 - tree mode has been added. Trees are an example of a non-totalistic, probabilistic 3D cellular automata (26n). The Tree tab allows the user to control the probabilities and heights of the growth.
