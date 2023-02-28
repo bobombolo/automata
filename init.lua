@@ -227,7 +227,7 @@ function automata.grow(pattern_id, pname)
 	--load the rules
 	local rules = automata.patterns[pattern_id].rules
 	local is_final = false
-	if iteration == rules.gens then is_final = 1 end
+	if iteration == rules.gens then is_final = true end
 	--content types to reduce lookups
 	local c_trail
 	local c_final
@@ -247,7 +247,18 @@ function automata.grow(pattern_id, pname)
 	end
 	local c_air      = minetest.get_content_id("air")
 	local c_automata = minetest.get_content_id("automata:active")
-    local c_leaves = minetest.get_content_id("default:leaves")
+    local c_leaves
+    if c_final == minetest.get_content_id("default:jungletree") then
+		c_leaves = minetest.get_content_id("default:jungleleaves")
+	elseif c_final == minetest.get_content_id("default:pine_tree") then
+		c_leaves = minetest.get_content_id("default:pine_needles")
+	elseif c_final == minetest.get_content_id("default:acacia_tree") then
+		c_leaves = minetest.get_content_id("default:acacia_leaves")
+	elseif c_final == minetest.get_content_id("default:aspen_tree") then
+		c_leaves = minetest.get_content_id("default:aspen_leaves")
+	else
+		c_leaves = minetest.get_content_id("default:leaves")
+	end
     local c_apple = minetest.get_content_id("default:apple")
 	--create a voxelManipulator instance
 	local vm = minetest.get_voxel_manip()
@@ -500,7 +511,7 @@ function automata.grow(pattern_id, pname)
 				    death_list[new_pos_vi] = pos --with grow_distance ~= 0, the old pos dies leaving rules.trail
 			    else
 				    --in the case that this is the final iteration, we need to pass it to the life list afterall
-				    if is_final == 1 then
+				    if is_final then
 					    birth_list[new_pos_vi] = pos --when node is actually set we will add to new_indexes
 				    else
 					    add_to_new_cell_list(new_pos_vi, pos) --bypass birth_list go straight to new_indexes
@@ -801,7 +812,7 @@ function automata.grow(pattern_id, pname)
 					  rules = rules, creator = pname
 				    }
 	automata.patterns[pattern_id] = values
-	if is_final == 1 then
+	if is_final then
 		automata.patterns[pattern_id].status = "finished"
 		minetest.chat_send_player(pname, "Your pattern, #"..pattern_id.." hit it's generation limit, "..iteration)
 		return false
