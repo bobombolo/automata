@@ -1363,7 +1363,7 @@ function automata.show_item_images(pname, items, setting)
 	local i = 1
 	local j = 1
 	for _, item in ipairs(items) do
-		f_images = f_images .. "item_image_button["..i..","..j..";1,1;"..item..";"..setting..";"..item.."]"
+		f_images = f_images .. "item_image_button["..i..","..j..";1,1;"..item..";"..setting..";]"
 		if i < 12 then
 			i = i + 1
 		else
@@ -1429,9 +1429,9 @@ function automata.show_rc_form(pname)
 								" y= "..math.floor(ppos.y).." z= "..math.floor(ppos.z).." and mostly facing "..dir.."]"
 	--1D, 2D, 3D, Import, Tree
 	local f_grow_settings = 	"label[1,4.7; Trail Block]"..
-								"item_image_button[3,4.7;0.8,0.8;"..trail..";trail;"..minetest.formspec_escape(trail).."]" ..
+								"item_image_button[3,4.7;0.8,0.8;"..trail..";trail;]" ..
 								"label[1,5.5; Final Block]"..
-								"item_image_button[3,5.5;0.8,0.8;"..final..";final;"..minetest.formspec_escape(final).."]" ..
+								"item_image_button[3,5.5;0.8,0.8;"..final..";final;]" ..
 								"checkbox[0.7,7.5;destruct;Destructive?;"..destruct.."]"..
 								"field[1,7;2,1;gens;Generations;"..minetest.formspec_escape(gens).."]" ..
 								"field[3,7;2,1;delay;Delay (ms);"..minetest.formspec_escape(delay).."]" ..
