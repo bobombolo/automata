@@ -1196,7 +1196,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 		--item image selection form
 		if formname == "automata:image_items" then
-			print(dump(fields))
+			--print(dump(fields))
 			if fields.exit == "Cancel" then
 				automata.show_rc_form(pname)
 				return true
@@ -1374,7 +1374,7 @@ function automata.show_item_images(pname, items, setting)
 	end
 	local f_body = "size[14,10]" ..
 					"button_exit[12,0.01;2,1;exit;Cancel]"
-	print(f_images)	
+	--print(f_images)	
 	minetest.show_formspec(pname,   "automata:image_items",
                                     f_body..f_images
 	)
