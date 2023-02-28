@@ -1200,16 +1200,19 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			if fields.exit == "Cancel" then
 				automata.show_rc_form(pname)
 				return true
-			end
-			if fields.trail then
-				automata.player_settings[pname].trail = fields.trail
-				automata.show_rc_form(pname)
-				return true
-			end
-			if fields.final then
-				automata.player_settings[pname].final = fields.final
-				automata.show_rc_form(pname)
-				return true
+			else
+				for k,v in pairs(fields) do
+					if string.sub(k, 1, 5) == "trail" then
+						automata.player_settings[pname].trail = v
+						automata.show_rc_form(pname)
+						return true
+					end
+					if string.sub(k, 1, 5) == "final" then
+						automata.player_settings[pname].final = v
+						automata.show_rc_form(pname)
+						return true
+					end
+				end
 			end
 			return true
 		end
@@ -1360,17 +1363,18 @@ function automata.get_player_setting(pname, setting)
 end
 function automata.show_item_images(pname, items, setting)
 	local f_images = ""
+	local unique = 0
 	local i = 1
 	local j = 1
 	for _, item in ipairs(items) do
-		f_images = f_images .. "item_image_button["..i..","..j..";1,1;"..item..";"..setting..";"..item.."]"
+		f_images = f_images .. "item_image_button["..i..","..j..";1,1;"..item..";"..setting..unique..";"..item.."]"
 		if i < 12 then
 			i = i + 1
 		else
 			i = 1
 			j = j + 1
 		end
-		
+		unique = unique + 1
 	end
 	local f_body = "size[14,10]" ..
 					"button_exit[12,0.01;2,1;exit;Cancel]"
