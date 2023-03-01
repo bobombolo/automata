@@ -1340,19 +1340,19 @@ function automata.get_player_setting(pname, setting)
 end
 function automata.show_item_images(pname, items, setting)
 	local f_images = ""
-	local i = 1
-	local j = 1
+	local i = 0.75
+	local j = 0.75
 	for cid, item in pairs(items) do
-		f_images = f_images .. "item_image_button["..i..","..j..";1,1;"..item..";"..setting..cid..";]"
-		if i < 12 then
-			i = i + 1
+		f_images = f_images .. "item_image_button["..i..","..j..";0.75,0.75;"..item..";"..setting..cid..";]"
+		if i < 12.5 then
+			i = i + 0.75
 		else
-			i = 1
-			j = j + 1
+			i = 0.75
+			j = j + 0.75
 		end
 	end
 	local f_body = "size[14,10]" ..
-					"button_exit[12,0.01;2,1;exit;Cancel]"
+					"button_exit[12,0;2,1;exit;Cancel]"
 	--print(f_images)	
 	minetest.show_formspec(pname,   "automata:image_items",
                                     f_body..f_images
