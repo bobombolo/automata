@@ -996,6 +996,7 @@ function automata.rules_validate(pname, rule_override)
         rules.birth = {}
         rules.survive = {}
         rules.tree = true
+        rules.trail = "air"
         local up_bud_chance = automata.get_player_setting(pname, "up_bud_chance")
         if not up_bud_chance then rules.up_bud_chance = 0.08
 	    elseif tonumber(up_bud_chance) >= 0 and tonumber(up_bud_chance) <= 1 then rules.up_bud_chance = tonumber(up_bud_chance)
@@ -1406,9 +1407,7 @@ function automata.show_rc_form(pname)
 								"label[0,0;You are at x= "..math.floor(ppos.x)..
 								" y= "..math.floor(ppos.y).." z= "..math.floor(ppos.z).." and mostly facing "..dir.."]"
 	--1D, 2D, 3D, Import, Tree
-	local f_grow_settings = 	"label[1,4.7; Trail Block]"..
-								"item_image_button[3,4.7;0.8,0.8;"..trail..";trail;]" ..
-								"label[1,5.5; Final Block]"..
+	local f_grow_settings = 	"label[1,5.5; Final Block]"..
 								"item_image_button[3,5.5;0.8,0.8;"..final..";final;]" ..
 								"checkbox[0.7,7.5;destruct;Destructive?;"..destruct.."]"..
 								"field[1,7;2,1;gens;Generations;"..minetest.formspec_escape(gens).."]" ..
@@ -1425,7 +1424,12 @@ function automata.show_rc_form(pname)
 	local f_footer = 			activate_section ..
 								"label[4.5,8.5;Start one cell here.]"..
 								"button_exit[4.5,9;2,1;exit;Single]"
-	
+	-- add trailt o tabs 1 - 4 but not tree
+	if tab == "1" or tab == "2" or tab == "3" or tab == "4" then
+		local f_trail = 		"label[1,4.7; Trail Block]"..
+								"item_image_button[3,4.7;0.8,0.8;"..trail..";trail;]" 
+		f_grow_settings = f_grow_settings ..f_trail
+	end
 	--then populate defaults common to 1D and 2D (and importing)
 	if tab == "1" or tab == "2" or tab == "4" then
 		--grow_distance
