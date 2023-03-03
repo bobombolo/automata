@@ -1485,7 +1485,8 @@ function automata.show_rc_form(pname)
 	-- add trailt o tabs 1 - 4 but not tree
 	if tab == "1" or tab == "2" or tab == "3" or tab == "4" then
 		local f_trail = "label[1,4.7; Trail Block]"
-		if automata.get_player_setting(pname, "use_sequence") ~= "none" then
+		local use_sequence = automata.get_player_setting(pname, "use_sequence")
+		if use_sequence and use_sequence ~= "none" then
 			f_trail = f_trail .. 	"label[3,4.7; Using Sequence # ".. 
 									automata.get_player_setting(pname, "use_sequence") .. "]"
 		else
