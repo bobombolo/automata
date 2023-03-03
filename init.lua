@@ -245,7 +245,7 @@ function automata.grow(pattern_id, pname)
 		else 
 			local trail = sequence[ ( iteration - 1 ) % #sequence + 1 ]
 			c_trail = minetest.get_content_id(trail)
-			if is_final then rules.final = sequence[ ( iteration ) % #sequence + 1 ] end
+			if is_final and not rules.final then rules.final = sequence[ ( iteration ) % #sequence + 1 ] end
 		end
 	else
 		c_trail = minetest.get_content_id(rules.trail)
