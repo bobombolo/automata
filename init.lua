@@ -229,7 +229,27 @@ function automata.grow(pattern_id, pname)
 	local is_final = false
 	if iteration == rules.gens then is_final = true end
 	--content types to reduce lookups
-	local c_trail = minetest.get_content_id(rules.trail)
+	local c_trail
+	--sequences
+	local use_sequence = automata.get_player_setting(pname, "use_sequence")
+	if use_sequence and use_sequence ~= "none" then
+		local sequence = {}
+		for i=1, 12 do
+			local setting = automata.get_player_setting(pname, "seq"..use_sequence.."slot"..i)
+			if setting then
+				table.insert(sequence, setting)
+			end
+		end
+		print(dump(sequence))
+		if next(sequence) == nil then c_trail = minetest.get_content_id("air")
+		else 
+			local trail = sequence[ ( iteration - 1 ) % #sequence + 1 ]
+			c_trail = minetest.get_content_id(trail)
+			if is_final then rules.final = sequence[ ( iteration - 1 ) % #sequence + 2 ] end
+		end
+	else
+		c_trail = minetest.get_content_id(rules.trail)
+	end
 	local c_final = minetest.get_content_id(rules.final)
 	local c_air      = minetest.get_content_id("air")
 	local c_automata = minetest.get_content_id("automata:active")
@@ -1120,7 +1140,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		local old_tab = automata.get_player_setting(pname, "tab")
 		-- always save any form fields
 		for k,v in next, fields do
-			automata.player_settings[pname][k] = v --we will preserve field entries exactly as entered 
+			if not string.find(k, "cid") then --this is so we don't record image item selections as settings
+				automata.player_settings[pname][k] = v --we will preserve field entries exactly as entered 
+			end
 		end
 		automata.save_player_settings()
 		if formname == "automata:popup" then
@@ -1182,16 +1204,24 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				local list = automata.get_valid_blocks()
 				for k,_ in pairs(fields) do
 					if string.sub(k, 1, 5) == "trail" then
-						local cid = tonumber(string.sub(k, 6, string.len(k)))
+						local cid = tonumber(string.sub(k, 9, string.len(k)))
 						automata.player_settings[pname].trail = list[cid]
 						automata.show_rc_form(pname)
 						return true
 					end
 					if string.sub(k, 1, 5) == "final" then
-						local cid = tonumber(string.sub(k, 6, string.len(k)))
+						local cid = tonumber(string.sub(k, 9, string.len(k)))
 						automata.player_settings[pname].final = list[cid]
 						automata.show_rc_form(pname)
 						return true
+					end
+					if string.sub(k,1,3) == "seq" then
+						local cid = tonumber(string.sub(k, (string.find(k,"cid")+3), string.len(k)))
+						--print(string.sub(k,1,(string.find(k,"cid")-1)))
+						--print(cid)
+						automata.player_settings[pname][string.sub(k,1,(string.find(k,"cid")-1))] = list[cid]
+						--print(dump(automata.player_settings))
+						automata.show_rc_form(pname)
 					end
 				end
 			end
@@ -1248,6 +1278,20 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				--update the form
 				automata.show_rc_form(pname)
 				return true
+			end
+			--sequences
+			local list = automata.get_valid_blocks()
+			for k,_ in pairs(fields) do
+				if string.sub(k, 1, 3) == "seq" then
+					local i = string.sub(k,4,(string.find(k,"slot")-1))
+					local j = string.sub(k,(string.find(k,"slot")+4), string.len(k))
+					automata.show_item_images(pname, list, "seq"..i.."slot"..j)
+					return true
+				end
+			end
+			--print(dump(fields))
+			if fields.use_sequence then
+				automata.player_settings[pname].use_sequence = fields.use_sequence
 			end
 			--actual form submissions
 			if fields.exit == "Activate" then
@@ -1343,7 +1387,8 @@ function automata.show_item_images(pname, items, setting)
 	local i = 0.75
 	local j = 0.75
 	for cid, item in pairs(items) do
-		f_images = f_images .. "item_image_button["..i..","..j..";0.75,0.75;"..item..";"..setting..cid..";]"
+		f_images = f_images .. 	"item_image_button["..i..","..j..";0.75,0.75;"..
+								item..";"..setting.."cid"..cid..";]"
 		if i < 12.5 then
 			i = i + 0.75
 		else
@@ -1358,6 +1403,19 @@ function automata.show_item_images(pname, items, setting)
                                     f_body..f_images
 	)
 	return true
+end
+function automata.get_sequences(pname)
+	local list = {}
+	for j=1,12 do
+		list[j] = {}
+		for i=1,12 do
+			local slot_value = automata.get_player_setting(pname, "seq"..j.."slot"..i)
+			if not slot_value then slot_value = "" end
+			list[j][i] = slot_value
+		end
+	end
+	--print(dump(list))
+	return list
 end
 -- show the main remote control form
 function automata.show_rc_form(pname)
@@ -1403,11 +1461,11 @@ function automata.show_rc_form(pname)
 	end
 	--set some formspec sections for re-use on all tabs
 	local f_header = 			"size[12,10]" ..
-								"tabheader[0,0;tab;1D, 2D, 3D, Import, Tree, Manage;"..tab.."]"..
-								"label[0,0;You are at x= "..math.floor(ppos.x)..
-								" y= "..math.floor(ppos.y).." z= "..math.floor(ppos.z).." and mostly facing "..dir.."]"
+								"tabheader[0,0;tab;1D, 2D, 3D, Import, Tree, Manage, Sequences;"..tab.."]"
 	--1D, 2D, 3D, Import, Tree
-	local f_grow_settings = 	"label[1,5.5; Final Block]"..
+	local f_grow_settings = 	"label[0,0;You are at x= "..math.floor(ppos.x)..
+								" y= "..math.floor(ppos.y).." z= "..math.floor(ppos.z).." and mostly facing "..dir.."]" ..
+								"label[1,5.5; Final Block]"..
 								"item_image_button[3,5.5;0.8,0.8;"..final..";final;]" ..
 								"checkbox[0.7,7.5;destruct;Destructive?;"..destruct.."]"..
 								"field[1,7;2,1;gens;Generations;"..minetest.formspec_escape(gens).."]" ..
@@ -1426,8 +1484,13 @@ function automata.show_rc_form(pname)
 								"button_exit[4.5,9;2,1;exit;Single]"
 	-- add trailt o tabs 1 - 4 but not tree
 	if tab == "1" or tab == "2" or tab == "3" or tab == "4" then
-		local f_trail = 		"label[1,4.7; Trail Block]"..
-								"item_image_button[3,4.7;0.8,0.8;"..trail..";trail;]" 
+		local f_trail = "label[1,4.7; Trail Block]"
+		if automata.get_player_setting(pname, "use_sequence") ~= "none" then
+			f_trail = f_trail .. 	"label[3,4.7; Using Sequence # ".. 
+									automata.get_player_setting(pname, "use_sequence") .. "]"
+		else
+			f_trail = f_trail ..	"item_image_button[3,4.7;0.8,0.8;"..trail..";trail;]" 
+		end
 		f_grow_settings = f_grow_settings ..f_trail
 	end
 	--then populate defaults common to 1D and 2D (and importing)
@@ -1603,6 +1666,47 @@ function automata.show_rc_form(pname)
 		end
 		minetest.show_formspec(pname, "automata:rc_form", 
 								f_header ..	f_plist					
+		)
+		return true
+	end
+	--sequences
+	if tab == "7" then
+		local id = automata.get_player_setting(pname, "use_sequence")
+		local seq_id
+		if not id then id = 1
+		else 
+			local idx = {}; idx["none"]=1; idx["1"]=2; idx["2"]=3; idx["3"]=4; idx["4"]=5
+							idx["5"]=6; idx["6"]=7; idx["7"]=8; idx["8"]=9
+							idx["9"]=10; idx["10"]=11; idx["11"]=12; idx["12"]=13
+			id = idx[id]
+		end
+		local f_seq_settings = 	"label[0,0;Use Sequence]" ..
+								"dropdown[2,0;2,1;use_sequence;none,1,2,3,4,5,6,7,8,9,10,11,12;"..id.."]"
+		local f_slist = ""
+		local i = 1
+		local j = 1
+		local sequences = automata.get_sequences(pname)
+		--print(dump(sequences))
+		for seqnum, sequence in pairs(sequences) do
+			for slotnum, slot_value in pairs(sequence) do
+				f_slist = f_slist 	.. "label[0,"..(j*0.75)..";"..j.."]"
+									.. "item_image_button["..(i*0.75)..","..(j*0.75)..";0.75,0.75;"
+									..slot_value..";seq"..j.."slot"..i..";]"
+				if i < 12 then
+					i = i + 1
+				else
+					i = 1
+				end
+			end
+			if j < 12 then
+				j = j + 1
+			else
+				j = 1
+			end
+		end
+		--print(dump(f_slist))
+		minetest.show_formspec(pname, "automata:rc_form", 
+								f_header .. f_seq_settings .. f_slist					
 		)
 		return true
 	end
