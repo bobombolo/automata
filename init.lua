@@ -232,7 +232,7 @@ function automata.grow(pattern_id, pname)
 	local c_trail
 	--sequences
 	local use_sequence = automata.get_player_setting(pname, "use_sequence")
-	if use_sequence and use_sequence ~= "none" and rules.tree == false then
+	if use_sequence and use_sequence ~= "none" and not rules.tree then
 		local sequence = {}
 		for i=1, 12 do
 			local setting = automata.get_player_setting(pname, "seq"..use_sequence.."slot"..i)
