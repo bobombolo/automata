@@ -48,6 +48,7 @@ For other known issues and planned improvements see: https://github.com/bobombol
 ## New since v.0.1.1
 - sound to accompany each growth cycle that is tuned to the pattern itself from total cell count, birth count and death count
 - the speed of growth can now be controlled by setting a delay in miliseconds.
+- RAINBOW mode has been changed to sequences, for which there is a new tab
 
 ## New since v.0.1.0
 - tree mode has been added. Trees are an example of a non-totalistic, probabilistic 3D cellular automata (26n). The Tree tab allows the user to control the probabilities and heights of the growth.
