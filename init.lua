@@ -333,7 +333,7 @@ function automata.grow(pattern_id, pname)
 		if rules.grow_axis == "x" then
 			growth_offset = {x = rules.grow_distance, y=0, z=0}
 		elseif rules.grow_axis == "z" then
-			growth_offset = {x=0, y=0, z = rules.grow_distance}
+			growth_offset = {x=0, y=0, z = -rules.grow_distance} --why this has to be negative?
 		else --grow_axis is y
 			growth_offset = {x=0, y = rules.grow_distance, z=0}
 		end
@@ -1431,7 +1431,7 @@ end
 function automata.show_rc_form(pname)
     local player = minetest.get_player_by_name(pname)
 	local ppos = player:get_pos()
-	local degree = player:get_look_horizontal()*180/math.pi - 90
+	local degree = 180-math.deg(player:get_look_horizontal())
 	if degree < 0 then degree = degree + 360 end
 	local dir
 	if     degree <= 45 or degree > 315 then dir = "+ Z"
