@@ -231,17 +231,11 @@ function automata.grow(pattern_id, pname)
 	--content types to reduce lookups
 	local c_trail
 	--sequences
-	local use_sequence = automata.get_player_setting(pname, "use_sequence")
-	if use_sequence and use_sequence ~= "none" and not rules.tree then
-		local sequence = {}
-		for i=1, 12 do
-			local setting = automata.get_player_setting(pname, "seq"..use_sequence.."slot"..i)
-			if setting then
-				table.insert(sequence, setting)
-			end
-		end
-		print(dump(sequence))
-		if next(sequence) == nil then c_trail = minetest.get_content_id("air")
+	local use_sequence = rules.use_sequence
+	local sequence = automata.patterns[pattern_id].sequence
+	if use_sequence and not rules.tree then
+		if next(sequence) == nil then
+			c_trail = minetest.get_content_id("air")
 		else 
 			local trail = sequence[ ( iteration - 1 ) % #sequence + 1 ]
 			c_trail = minetest.get_content_id(trail)
@@ -814,7 +808,7 @@ function automata.grow(pattern_id, pname)
 	local values =  { pmin = {x=xmin,y=ymin,z=zmin}, pmax = {x=xmax,y=ymax,z=zmax}, 
 				      cell_count = cell_count, emin = new_emin, emax = new_emax, base=base,
 					  indexes = new_indexes, l_timer = timer, iteration = iteration,
-					  t_timer = automata.patterns[pattern_id].t_timer + timer,
+					  t_timer = automata.patterns[pattern_id].t_timer + timer, sequence = sequence,
 					  rules = rules, creator = pname
 				    }
 	automata.patterns[pattern_id] = values
@@ -909,12 +903,27 @@ function automata.new_pattern(pname, offsets, rule_override)
 			vm:write_to_map()
 			vm:update_map()
 		end
+		--sequences
+		local use_sequence = automata.get_player_setting(pname, "use_sequence")
+		local sequence = {}
+		if use_sequence and use_sequence ~= "none" and not rules.tree then
+			rules.use_sequence = true
+			for i=1, 12 do
+				local setting = automata.get_player_setting(pname, "seq"..use_sequence.."slot"..i)
+				if setting then
+					table.insert(sequence, setting)
+				end
+			end
+			--print(dump(sequence))
+		else
+			rules.use_sequence = false
+		end
         local base = pmin --used by tree logic and sound
 		local timer = (os.clock() - t1) * 1000
 		--add the cell list to the active cell registry with the gens, rules hash, and cell list
 		local values = { creator=pname, status="active", iteration=0, rules=rules, base=base, 
 						 cell_count = cell_count, cell_list=hashed_cells, pmin=pmin, pmax=pmax,
-						 emin=emin, emax=emax, t_timer=timer, indexes = new_indexes }
+						 sequence = sequence, emin=emin, emax=emax, t_timer=timer, indexes = new_indexes }
 		automata.patterns[pattern_id] = values --overwrite placeholder
 		automata.grow_queue[pattern_id] = { lock = false, size = cell_count,
 											last_grow=os.clock(), creator = pname }
