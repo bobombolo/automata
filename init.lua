@@ -273,12 +273,13 @@ function automata.grow(pattern_id, pname)
 	if rules.neighbors == 2 then code1d = automata.toBits(rules.code1d, 8) end
 	local old_pmin = automata.patterns[pattern_id].pmin
 	local old_pmax = automata.patterns[pattern_id].pmax
-	local xmin = old_pmin.x
-	local ymin = old_pmin.y
-	local zmin = old_pmin.z
-	local xmax = old_pmax.x
-	local ymax = old_pmax.y
-	local zmax = old_pmax.z
+	--shrink the old values by 1 so that the extent doesn't include the trail
+	local xmin = old_pmin.x + 1
+	local ymin = old_pmin.y + 1
+	local zmin = old_pmin.z + 1
+	local xmax = old_pmax.x - 1
+	local ymax = old_pmax.y - 1
+	local zmax = old_pmax.z - 1
 	local new_emin, new_emax = vm:read_from_map({x=old_pmin.x-e, y=old_pmin.y-e, z=old_pmin.z-e},
 												{x=old_pmax.x+e, y=old_pmax.y+e, z=old_pmax.z+e} )
 	local new_area = VoxelArea:new({MinEdge=new_emin, MaxEdge=new_emax})
