@@ -4,6 +4,7 @@
 -- depends: WorldEdit mod if you want to use chat command //owncells
 -- written by bobomb (find me on the forum.minetest.net)
 -- license: WTFPL
+local DEBUG = false
 automata = {}
 automata.patterns = {} -- master pattern list
 automata.grow_queue = {}
@@ -212,6 +213,65 @@ function automata.process_queue()
 		end
 	end
 end
+-- a function to check for the symmetry of a 3D pattern
+-- this is mostly a debugging method since 3D patterns sometimes get jumbled
+-- works only on patterns started with a single cell or a symmetrical starter
+-- works only on unobstructed patterns or when destructive mode is on
+-- returns a table full of block positions that need to be marked as asymmetrical
+function automata.check_symmetry(indexes, center)
+	local asymmetrical_cells = {}
+	local cell_count = 0
+	for k,v in pairs(indexes) do
+		cell_count = cell_count + 1
+	end
+	--print(dump(indexes))
+	for index, position in pairs(indexes) do
+		--calculate the x, y and z offset of the block from the center
+		local dist = {x = position.x - center.x, y = position.y - center.y, z = position.z - center.z}
+		local function check_cells_across_axis(axis)
+			local opposite_cell = {x=0, y=0, z=0}
+			if dist[axis] < 0 then opposite_cell[axis] = 2 * -dist[axis]
+			elseif dist[axis] > 0 then opposite_cell[axis] = 2 * -dist[axis] 
+			end
+			--print("cell count: "..cell_count)
+			--print("center: "..dump(center))
+			--print("position: "..dump(position))
+			--print("distance: "..dump(dist))
+			--print("opposite cell offset: "..dump(opposite_cell))
+			local offset_position = {x=position.x + opposite_cell.x,
+									y=position.y + opposite_cell.y,
+									z=position.z + opposite_cell.z}
+			--print("offset position: "..dump(offset_position))
+			local found = false
+			for k, v in pairs(indexes) do
+				if v.x == offset_position.x
+				and v.y == offset_position.y
+				and v.z ==  offset_position.z then
+					found = true
+					break
+				end
+			end
+			if found then
+				
+				--print("FOUND!")
+				return true
+			else
+				--print("NOT FOUND!")
+				return false
+			end
+		end
+		local asymmetries = 0
+		if not check_cells_across_axis("x")  then asymmetries = asymmetries + 1 end
+		if not check_cells_across_axis("y")  then asymmetries = asymmetries + 1 end
+		if not check_cells_across_axis("z")  then asymmetries = asymmetries + 1 end
+		if asymmetries > 0 then
+			asymmetrical_cells[index] = position
+			asymmetrical_cells[index].badness = asymmetries
+		end
+	end
+	--print(dump(asymmetrical_cells))
+	return asymmetrical_cells
+end
 -- looks at each pattern, applies the rules to generate a death list, birth list then
 -- then sets the nodes and updates the pattern table settings and indexes (cell list)
 function automata.grow(pattern_id, pname)
@@ -229,23 +289,32 @@ function automata.grow(pattern_id, pname)
 	local is_final = false
 	if iteration == rules.gens then is_final = true end
 	--content types to reduce lookups
+	local c_air      = minetest.get_content_id("air")
 	local c_trail
 	--sequences
 	local use_sequence = rules.use_sequence
 	local sequence = automata.patterns[pattern_id].sequence
 	if use_sequence and not rules.tree then
 		if next(sequence) == nil then
-			c_trail = minetest.get_content_id("air")
+			c_trail = c_air
 		else 
 			local trail = sequence[ ( iteration - 1 ) % #sequence + 1 ]
 			c_trail = minetest.get_content_id(trail)
-			if is_final and not rules.final then rules.final = sequence[ ( iteration ) % #sequence + 1 ] end
+			print(rules.final)
+			if is_final and not rules.final then
+				print("HERE")
+				rules.final = sequence[ ( iteration ) % #sequence + 1 ]
+			end
 		end
 	else
 		c_trail = minetest.get_content_id(rules.trail)
 	end
-	local c_final = minetest.get_content_id(rules.final)
-	local c_air      = minetest.get_content_id("air")
+	local c_final
+	if rules.final ~= "" then
+		c_final = minetest.get_content_id(rules.final)
+	else
+		c_final = c_trail
+	end
 	local c_automata = minetest.get_content_id("automata:active")
     local c_leaves
     if c_final == minetest.get_content_id("default:jungletree") then
@@ -792,17 +861,35 @@ function automata.grow(pattern_id, pname)
             end
 	    end
 	end
+	for k,v in pairs(new_indexes) do
+		if is_final then
+			data[k] = c_final
+		else
+			data[k] = c_automata
+		end
+	end
+	-- if DEBUG and 3D pattern and not a tree then test for asymmetry
+	if DEBUG and ( rules.neighbors == 6 or rules.neighbors == 18 or rules.neighbors == 26 ) and not rules.tree then
+		local bad_blocks = automata.check_symmetry(new_indexes, base)
+		local colors = {"wool:yellow","wool:orange","wool:red"}
+		if next(bad_blocks) ~= nil then
+			minetest.chat_send_player(pname, "Your pattern, #"..pattern_id.." became asymmetrical at gen "..iteration)
+			for k, v in pairs(bad_blocks) do
+				data[k] = minetest.get_content_id(colors[v.badness])
+			end
+		end
+	end
 	vm:set_data(data)
 	vm:write_to_map()
 	vm:update_map()
     --SOUND!
     local sound = rules.sound
-    local soundpos = { x=(xmin+xmax)/2, y=(ymin+ymax)/2, z=(zmin+zmax)/2 }
+    --local soundpos = { x=(xmin+xmax)/2, y=(ymin+ymax)/2, z=(zmin+zmax)/2 }
     local pitch1 = cell_count % 12
     -- got this number from https://music.stackexchange.com/questions/49803/how-to-reference-or-calculate-the-percentage-pitch-change-between-two-notes
     pitch1 = ( 1.0594630943592952645618252949463 ^ pitch1 ) / 2 -- divide by two to get an octave lower?
     if birth_count > 0 then
-		minetest.sound_play({name = sound},{pitch = pitch1, pos = soundpos, max_hear_distance = 100}, true)
+		minetest.sound_play({name = sound},{pitch = pitch1}, true)
 	end
 	--update pattern values
 	local timer = (os.clock() - t1) * 1000
@@ -967,7 +1054,7 @@ function automata.rules_validate(pname, rule_override)
     else rules.trail = trail end
 	--final
 	local final = automata.get_player_setting(pname, "final")
-	if not final then rules.final = rules.trail
+	if not final then rules.final = ""
 	else rules.final = final end
 	--destructive
 	local destruct = automata.get_player_setting(pname, "destruct")
