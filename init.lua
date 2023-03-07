@@ -291,6 +291,7 @@ function automata.grow(pattern_id, pname)
 	--content types to reduce lookups
 	local c_air      = minetest.get_content_id("air")
 	local c_trail
+	local c_final
 	--sequences
 	local use_sequence = rules.use_sequence
 	local sequence = automata.patterns[pattern_id].sequence
@@ -301,17 +302,14 @@ function automata.grow(pattern_id, pname)
 			local trail = sequence[ ( iteration - 1 ) % #sequence + 1 ]
 			c_trail = minetest.get_content_id(trail)
 			if is_final and rules.final == "" then
-				rules.final = sequence[ ( iteration ) % #sequence + 1 ]
+				c_final = minetest.get_content_id(sequence[ ( iteration ) % #sequence + 1 ])
 			end
 		end
 	else
 		c_trail = minetest.get_content_id(rules.trail)
 	end
-	local c_final
-	if rules.final ~= "" then
+	if is_final and not c_final then
 		c_final = minetest.get_content_id(rules.final)
-	else
-		c_final = c_trail
 	end
 	local c_automata = minetest.get_content_id("automata:active")
     local c_leaves
