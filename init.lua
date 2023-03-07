@@ -4,7 +4,7 @@
 -- depends: WorldEdit mod if you want to use chat command //owncells
 -- written by bobomb (find me on the forum.minetest.net)
 -- license: WTFPL
-local DEBUG = true
+local DEBUG = false
 automata = {}
 automata.patterns = {} -- master pattern list
 automata.grow_queue = {}
@@ -1323,14 +1323,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			return true
 		end
 		--the main form
-		if formname == "automata:rc_form" then 
-			
-				print(dump(fields))
+		if formname == "automata:rc_form" then
 			-- if any tab but 6 selected unlist the player as having tab6 open
 			if fields.quit or ( fields.tab ~= "6" and not fields.pid_id ) then 
 				if fields.exit == "Resume" or fields.exit == "Add Gens" 
 				or fields.pause or fields.finish or fields.delete or fields.purge then
-					print("HERE!")
+					--do nothing
 				else
 					automata.open_tab6[pname] = nil
 				end
@@ -1387,10 +1385,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						automata.patterns[pattern_id].rules.gens = automata.patterns[pattern_id].iteration
 						automata.patterns[pattern_id].status = "finished"
 						automata.grow_queue[pattern_id] = nil
-						print("here 1")
 						local vm = minetest.get_voxel_manip()
 						vm:read_from_map(automata.patterns[pattern_id].pmin, automata.patterns[pattern_id].pmax)
-						print("here 2")
 						local data = vm:get_data()
 						local active = minetest.get_content_id("automata:active")
 						local air = minetest.get_content_id("air")
@@ -1399,11 +1395,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 								data[index] = air
 							end
 						end
-						print("here 3")
 						vm:set_data(data)
-						print("here 4")
 						vm:write_to_map()
-						print("here 5")
 						vm:update_map()
 						automata.show_rc_form(pname)
 						return true
