@@ -4,7 +4,7 @@
 -- depends: WorldEdit mod if you want to use chat command //owncells
 -- written by bobomb (find me on the forum.minetest.net)
 -- license: WTFPL
-local DEBUG = false
+local DEBUG = true
 automata = {}
 automata.patterns = {} -- master pattern list
 automata.grow_queue = {}
@@ -300,9 +300,7 @@ function automata.grow(pattern_id, pname)
 		else 
 			local trail = sequence[ ( iteration - 1 ) % #sequence + 1 ]
 			c_trail = minetest.get_content_id(trail)
-			print(rules.final)
-			if is_final and not rules.final then
-				print("HERE")
+			if is_final and rules.final == "" then
 				rules.final = sequence[ ( iteration ) % #sequence + 1 ]
 			end
 		end
@@ -1326,9 +1324,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 		--the main form
 		if formname == "automata:rc_form" then 
+			
+				print(dump(fields))
 			-- if any tab but 6 selected unlist the player as having tab6 open
 			if fields.quit or ( fields.tab ~= "6" and not fields.pid_id ) then 
-				automata.open_tab6[pname] = nil
+				if fields.exit == "Resume" or fields.exit == "Add Gens" 
+				or fields.pause or fields.finish or fields.delete or fields.purge then
+					print("HERE!")
+				else
+					automata.open_tab6[pname] = nil
+				end
 			end 
 			--detect tab change	
 			if old_tab and old_tab ~= automata.get_player_setting(pname, "tab") then
@@ -1347,32 +1352,102 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			if fields.lif_id and string.sub(fields.lif_id, 1, 4) == "DCL:" then
 				automata.show_lif_summary(pname)
 			end
-			--if the pid_id click or double-click field is submitted, we pause or unpause the pattern
-			if fields.pid_id then
-				--translate the pid_id back to a pattern_id
-				local pid_id = string.sub(fields.pid_id, 5)
-				local pattern_id = automata.open_tab6[pname][tonumber(pid_id)] --this table is created in show_rcform() survives changes to patterns table
-				if string.sub(fields.pid_id, 1, 4) == "CHG:" and automata.patterns[pattern_id].status == "active" then
-					automata.grow_queue[pattern_id] = nil
-					automata.patterns[pattern_id].status = "paused"
-				elseif string.sub(fields.pid_id, 1, 4) == "DCL:" then
+			--manage tab stuff
+			if fields.pause or fields.exit == "Resume" or fields.finish or fields.delete
+			or fields.exit == "Add Gens" then
+				local pid_id = tonumber(string.sub(automata.get_player_setting(pname, "pid_id"), 5,
+											#automata.get_player_setting(pname, "pid_id")))
+				local pattern_id = automata.open_tab6[pname][tonumber(pid_id)]
+				if not pattern_id then return false end
+				if fields.pause == "Pause" then
+					if automata.patterns[pattern_id].status == "active" then	
+						automata.grow_queue[pattern_id] = nil
+						automata.patterns[pattern_id].status = "paused"
+						
+						automata.show_rc_form(pname)
+						return true
+					else
+						automata.show_popup(pname, "You can only pause an active pattern")
+					end
+				end
+				if fields.exit == "Resume" then 
 					if automata.patterns[pattern_id].status == "paused" then
 						automata.patterns[pattern_id].status = "active"
 						automata.grow_queue[pattern_id] = { lock = false, last_grow=os.clock(), creator = pname,
 															size = automata.patterns[pattern_id].cell_count }
-					elseif automata.patterns[pattern_id].status == "finished" then
+						automata.open_tab6[pname] = nil
+						return true
+					else
+						automata.show_popup(pname, "You can only resume a paused pattern")
+					end
+				end
+				if fields.finish == "Finish" then
+					if automata.patterns[pattern_id].status == "active"
+					or automata.patterns[pattern_id].status == "paused" then
+						automata.patterns[pattern_id].rules.gens = automata.patterns[pattern_id].iteration
+						automata.patterns[pattern_id].status = "finished"
+						automata.grow_queue[pattern_id] = nil
+						print("here 1")
+						local vm = minetest.get_voxel_manip()
+						vm:read_from_map(automata.patterns[pattern_id].pmin, automata.patterns[pattern_id].pmax)
+						print("here 2")
+						local data = vm:get_data()
+						local active = minetest.get_content_id("automata:active")
+						local air = minetest.get_content_id("air")
+						for index, cid in pairs(data) do
+							if cid == active then
+								data[index] = air
+							end
+						end
+						print("here 3")
+						vm:set_data(data)
+						print("here 4")
+						vm:write_to_map()
+						print("here 5")
+						vm:update_map()
+						automata.show_rc_form(pname)
+						return true
+					else
+						automata.show_popup(pname, "You can only finish an active or paused pattern")
+					end
+				end
+				if fields.delete == "Delete" then
+					if automata.patterns[pattern_id].status == "finished"
+					or automata.patterns[pattern_id].status == "extinct" then
+						automata.patterns[pattern_id] = nil
+						automata.grow_queue[pattern_id] = nil
+						automata.show_rc_form(pname)
+						return true
+					else
+						automata.show_popup(pname, "You can only delete a finished or extinct pattern")
+					end
+				end
+				if fields.exit == "Add Gens" then
+					if automata.patterns[pattern_id].status == "finished" then
 						local add_gens = tonumber(fields.add_gens)
+						add_gens = math.floor(add_gens)
 						if add_gens then
 							add_gens = math.floor(add_gens)
 							automata.player_settings[pname][add_gens] = add_gens
 							automata.patterns[pattern_id].rules.gens = automata.patterns[pattern_id].rules.gens + add_gens
 							automata.grow_queue[pattern_id] = { lock = false, last_grow=os.clock(), creator = pname,
 																size = automata.patterns[pattern_id].cell_count }
-						else automata.show_popup(pname, "Add gens field must be a number")
+							automata.open_tab6[pname] = nil
+						else
+							automata.show_popup(pname, "Add gens field must be a number")
 						end
+					else
+						automata.show_popup(pname, "You can only add gens to a finished pattern")
 					end
 				end
-				--update the form
+			end
+			if fields.purge == "Purge Finished" then
+				for pattern_id, values in pairs(automata.patterns) do
+					if values.creator == pname and ( values.status == "finished" or values.status == "extinct" ) then
+						automata.patterns[pattern_id] = nil
+						automata.grow_queue[pattern_id] = nil
+					end
+				end
 				automata.show_rc_form(pname)
 				return true
 			end
@@ -1386,7 +1461,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					return true
 				end
 			end
-			--print(dump(fields))
 			if fields.use_sequence then
 				automata.player_settings[pname].use_sequence = fields.use_sequence
 			end
@@ -1755,12 +1829,18 @@ function automata.show_rc_form(pname)
 		local f_plist
 		local add_gens = automata.get_player_setting(pname, "add_gens")
 		if not add_gens then add_gens = 1 end
-		if patterns == "" then f_plist = "label[1,1;no active patterns]"
-		else f_plist = 	"label[1,1;Your patterns]"..
-						"textlist[1,1.5;10,8;pid_id;"..patterns..";1]"..
-						"label[3,1;Single Click to Pause]"..
-						"label[6,1;Double Click to Resume]"..
-						"field[9.5,1;2,1;add_gens;More Gens:;"..minetest.formspec_escape(add_gens).."]"
+		local pid_id = tonumber(string.sub(automata.get_player_setting(pname, "pid_id"), 5,
+											#automata.get_player_setting(pname, "pid_id")))
+		if patterns == "" then f_plist = "label[1,1;no patterns]"
+		else f_plist = 	"button[1,0;2,1;pause;Pause]"..
+						"button_exit[3,0;2,1;exit;Resume]"..
+						"button[5,0;2,1;finish;Finish]"..
+						"button[7,0;2,1;delete;Delete]"..
+						"button_exit[9,0;2,1;exit;Add Gens]"..
+						"field[9.3,1;2,1;add_gens;;"..minetest.formspec_escape(add_gens).."]"..
+						"label[1,1;Your patterns]"..
+						"textlist[1,1.5;10,8;pid_id;"..patterns..";"..pid_id.."]"..
+						"button[8.5,9.5;3,1;purge;Purge Finished]"
 		end
 		minetest.show_formspec(pname, "automata:rc_form", 
 								f_header ..	f_plist					
