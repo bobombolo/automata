@@ -4,7 +4,7 @@
 -- depends: WorldEdit mod if you want to use chat command //owncells
 -- written by bobomb (find me on the forum.minetest.net)
 -- license: WTFPL
-local DEBUG = false
+local DEBUG = true
 automata = {}
 automata.patterns = {} -- master pattern list
 automata.grow_queue = {}
@@ -181,14 +181,12 @@ end)
 --the grow_queue logic
 function automata.process_queue()
 	for pattern_id, v in next, automata.grow_queue do
-		--print(dump(automata.patterns[pattern_id]))
 		local delay = automata.patterns[pattern_id].rules.delay / 1000
 		--if not delay then delay = 0 end
 		if automata.grow_queue[pattern_id].lock == false --pattern is not paused or finished
 		and minetest.get_player_by_name(v.creator) --player in game
 		--commenting out the throttling
-		and (os.clock() - automata.grow_queue[pattern_id].last_grow) 
-		>= delay 
+		and (os.clock() - automata.grow_queue[pattern_id].last_grow) >= delay 
 		--	>= automata.grow_queue[pattern_id].size / 100
 		--or (os.clock() - automata.grow_queue[pattern_id].last_grow) 
 		--	>= math.log(automata.grow_queue[pattern_id].size) )
@@ -233,15 +231,9 @@ function automata.check_symmetry(indexes, center)
 			if dist[axis] < 0 then opposite_cell[axis] = 2 * -dist[axis]
 			elseif dist[axis] > 0 then opposite_cell[axis] = 2 * -dist[axis] 
 			end
-			--print("cell count: "..cell_count)
-			--print("center: "..dump(center))
-			--print("position: "..dump(position))
-			--print("distance: "..dump(dist))
-			--print("opposite cell offset: "..dump(opposite_cell))
 			local offset_position = {x=position.x + opposite_cell.x,
 									y=position.y + opposite_cell.y,
 									z=position.z + opposite_cell.z}
-			--print("offset position: "..dump(offset_position))
 			local found = false
 			for k, v in pairs(indexes) do
 				if v.x == offset_position.x
@@ -252,11 +244,8 @@ function automata.check_symmetry(indexes, center)
 				end
 			end
 			if found then
-				
-				--print("FOUND!")
 				return true
 			else
-				--print("NOT FOUND!")
 				return false
 			end
 		end
@@ -269,7 +258,6 @@ function automata.check_symmetry(indexes, center)
 			asymmetrical_cells[index].badness = asymmetries
 		end
 	end
-	--print(dump(asymmetrical_cells))
 	return asymmetrical_cells
 end
 -- looks at each pattern, applies the rules to generate a death list, birth list then
@@ -289,7 +277,7 @@ function automata.grow(pattern_id, pname)
 	local is_final = false
 	if iteration == rules.gens then is_final = true end
 	--content types to reduce lookups
-	local c_air      = minetest.get_content_id("air")
+	local c_air = minetest.get_content_id("air")
 	local c_trail
 	local c_final
 	--sequences
@@ -309,7 +297,11 @@ function automata.grow(pattern_id, pname)
 		c_trail = minetest.get_content_id(rules.trail)
 	end
 	if is_final and not c_final then
-		c_final = minetest.get_content_id(rules.final)
+		if rules.final == "" then
+			c_final = c_trail
+		else
+			c_final = minetest.get_content_id(rules.final)
+		end
 	end
 	local c_automata = minetest.get_content_id("automata:active")
     local c_leaves
@@ -1820,8 +1812,12 @@ function automata.show_rc_form(pname)
 		local f_plist
 		local add_gens = automata.get_player_setting(pname, "add_gens")
 		if not add_gens then add_gens = 1 end
-		local pid_id = tonumber(string.sub(automata.get_player_setting(pname, "pid_id"), 5,
-											#automata.get_player_setting(pname, "pid_id")))
+		local pid_id = automata.get_player_setting(pname, "pid_id")
+		if not pid_id then
+			pid_id = 1
+		else
+			pid_id = tonumber(string.sub(pid_id, 5, #pid_id))
+		end
 		if patterns == "" then f_plist = "label[1,1;no patterns]"
 		else f_plist = 	"button[1,0;2,1;pause;Pause]"..
 						"button_exit[3,0;2,1;exit;Resume]"..
