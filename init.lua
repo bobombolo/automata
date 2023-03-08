@@ -4,7 +4,7 @@
 -- depends: WorldEdit mod if you want to use chat command //owncells
 -- written by bobomb (find me on the forum.minetest.net)
 -- license: WTFPL
-local DEBUG = true
+local DEBUG = false
 automata = {}
 automata.patterns = {} -- master pattern list
 automata.grow_queue = {}
