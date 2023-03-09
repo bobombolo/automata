@@ -323,7 +323,7 @@ function automata.grow(pattern_id, pname)
 	local e 
 	if not rules.grow_distance or rules.grow_distance == "" or rules.grow_distance == 0 
 	or rules.neighbors == 6  or rules.neighbors == 18 or rules.neighbors == 26 then 
-		e = 1
+		e = 2 -- 1 should work but irregularities are introduced sometimes at gen 8
 		rules.grow_distance = 0
 	else e = math.abs(rules.grow_distance) end
 	local code1d
