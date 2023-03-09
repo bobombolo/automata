@@ -2,7 +2,7 @@
 ### A minetest mod for growing various cellular automata, including conway's game of life and giant procedural trees.
 Now with sound!
 
-https://user-images.githubusercontent.com/25610408/224127381-1d18b4f3-ab54-4dd1-ae6c-861a62127414.png
+![3Dautomata](https://user-images.githubusercontent.com/25610408/224127381-1d18b4f3-ab54-4dd1-ae6c-861a62127414.png)
 
 ### Installation
 like any minetest mod just install the mod as "automata" in your mods folder
