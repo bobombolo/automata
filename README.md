@@ -114,34 +114,38 @@ Author: bobomb, License: WTFPL
 
 ## Screenshots
 
-"Single" mode
+2D "Single" mode
 
-![screenshot_2030436717](https://cloud.githubusercontent.com/assets/12679496/8044135/0b4ec964-0de8-11e5-9cc1-8a2c93e6fc1a.png)
+![2Dform](https://user-images.githubusercontent.com/25610408/224129373-e1f3f2cf-0e8f-4f1b-8ffa-7e8231a77fb9.png)
+![2Dresult](https://user-images.githubusercontent.com/25610408/224129861-f09c71be-e373-4a2e-8ab0-691b157272d4.png)
 
-![screenshot_2030482649](https://cloud.githubusercontent.com/assets/12679496/8044134/0b4c0a26-0de8-11e5-9b83-f38f1bfd6476.png)
+Game of Life "Import" mode
 
-"Import" mode
-
-![screenshot_2030594267](https://cloud.githubusercontent.com/assets/12679496/8044137/0b579940-0de8-11e5-84d0-54588b532047.png)
-
-![screenshot_2030616024](https://cloud.githubusercontent.com/assets/12679496/8044138/0b5d4340-0de8-11e5-8b84-6fe2a224337a.png)
-
-![screenshot_11245761](https://cloud.githubusercontent.com/assets/12679496/8659575/2095d56e-2969-11e5-8cbb-a0e469373e5a.png)
+![importLIF](https://user-images.githubusercontent.com/25610408/224130826-1a83a988-e17c-4ede-894b-1e18f1502d64.png)
+![importResult](https://user-images.githubusercontent.com/25610408/224131164-bb7e2fdc-c85d-4320-86d8-6034f3d33a2f.png)
 
 "Activate" mode
 
-![screenshot_2030738253](https://cloud.githubusercontent.com/assets/12679496/8044136/0b51f01c-0de8-11e5-84cf-36615741fc4b.png)
+![placeCell](https://user-images.githubusercontent.com/25610408/224131678-1a16c74e-ace3-4f67-984b-78caa76777dc.png)
 
-![screenshot_2030806016](https://cloud.githubusercontent.com/assets/12679496/8044139/0b643b1e-0de8-11e5-95df-e494ee3f5cbb.png)
+"Tree" mode
+![treeForm](https://user-images.githubusercontent.com/25610408/224132113-e5441cb3-b86e-4579-963c-04bca71ecb27.png)
+![treeResult](https://user-images.githubusercontent.com/25610408/224132385-b5d31a6a-e335-4322-85ca-0b96bf69094c.png)
 
-1D Automata (uses NKS rules 0-255) (using RAINBOW mode)
+1D Automata rule 90
 
-![screenshot_32765381](https://cloud.githubusercontent.com/assets/12679496/8739282/f94baf2a-2bf6-11e5-939b-2a45fd057fc8.png)
+![1Dform](https://user-images.githubusercontent.com/25610408/224133031-d622584c-8ca2-4e40-9109-9b966ee02b13.png)
+![1Dresult](https://user-images.githubusercontent.com/25610408/224133277-87914a48-ec2c-49a2-9b27-c3e9cde91a73.png)
 
 3D Automata
 
-![screenshot_168375193](https://cloud.githubusercontent.com/assets/12679496/8142096/e20f3642-112f-11e5-91c4-b7dde4739dec.png)
+![3Dform](https://user-images.githubusercontent.com/25610408/224133889-71c2d34f-aa7a-4f08-9ed3-f12fa8ddd44e.png)
+![3Dresult](https://user-images.githubusercontent.com/25610408/224134169-8af07d33-cb4d-4cf1-96e0-8be099ae6c56.png)
 
 "Manage" tab
 
-![screenshot_168492531](https://cloud.githubusercontent.com/assets/12679496/8142097/e210c25a-112f-11e5-9136-56ad3a99bb97.png)
+![manage](https://user-images.githubusercontent.com/25610408/224134541-d46b7754-34d8-4e3c-b4a4-462f40998c6f.png)
+
+"Sequences"
+
+![sequences](https://user-images.githubusercontent.com/25610408/224130322-bb2916b8-604a-4b46-86f0-fc04bf80b0fc.png)
