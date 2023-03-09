@@ -2,6 +2,8 @@
 ### A minetest mod for growing various cellular automata, including conway's game of life and giant procedural trees.
 Now with sound!
 
+https://user-images.githubusercontent.com/25610408/224127381-1d18b4f3-ab54-4dd1-ae6c-861a62127414.png
+
 ### Installation
 like any minetest mod just install the mod as "automata" in your mods folder
 
@@ -40,7 +42,6 @@ If worldedit is installed, this mod adds a chat command, "//owncells" which allo
 
 ## Known Issues
 - Large patterns (particularly 3D patterns, can cause serious lag)
-- 3D patterns sometimes become assymmetrical even when started from a single cell.
 - zero-neighbor birth rules ( odd numbered NKS codes ) are implemented for cells inside the pattern's rectangular extent, not, obviously, for the entire infinite field. ways of faking this might be addressed in future releases but it is disclosed here that this implementation will have a unique effect on such rules' patterns compared to software that assumes an infinite field for each iteration...
 
 For other known issues and planned improvements see: https://github.com/bobombolo/automata/issues
