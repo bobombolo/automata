@@ -1095,7 +1095,7 @@ function automata.rules_validate(pname, rule_override)
 		rules.neighbors = tonumber(n3d)
 		local code3d = automata.get_player_setting(pname, "code3d")
 		if not code3d then code3d = "1,2,3,4/1,4" end 
-		rules.survive, rules.birth = automata.code2d_to_sb_and_nks(code3d)
+		rules.survive, rules.birth = automata.code3d_to_sb(code3d)
 	elseif tab == "5" then --tree mode
         rules.neighbors = 26
         rules.birth = {}
@@ -1167,7 +1167,7 @@ function automata.toBits(num, bits)
     return t
 end
 -- explode function modified from http://stackoverflow.com/a/29497100/3765399
--- for converting code3d inputs to tables
+-- for converting code2d and code3d inputs to tables
 -- with delimiter set to ", " this will discard all non-numbers,
 -- and accept commas and/or spaces as delimiters
 -- with no delimiter set, the entire string is exploded character by character
@@ -1213,6 +1213,22 @@ function automata.code2d_to_sb_and_nks(code2d)
 		end
 	end
 	return survival, birth, nks
+end
+function automata.code3d_to_sb(code3d)
+	local survival, birth
+	local split = string.find(code3d, "/")
+	if split then
+		-- take the values to the left and the values to the right
+		survival = string.sub(code3d, 1, split-1)
+		birth = string.sub(code3d, split+1)
+	else
+		--assume all rules are survival if no split
+		survival = code3d
+		birth = ""
+	end
+	survival = automata.explode(survival, ",")
+	birth = automata.explode(birth, ",")
+	return survival, birth
 end
 -- Processing the form from the RC
 minetest.register_on_player_receive_fields(function(player, formname, fields)
