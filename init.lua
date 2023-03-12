@@ -1624,7 +1624,7 @@ function automata.show_rc_form(pname)
 	if not destruct then destruct = "false" end
 	local sound_id
 	local sound = automata.get_player_setting(pname, "sound")
-	if not sound then sound_id = 1
+	if not sound then sound_id = 2
 	else 
 		local idx = {gong=1,darkboom=2,bowls=3,warblast=4,crystal=5}
 		sound_id = idx[sound]
