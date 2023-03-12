@@ -1049,7 +1049,7 @@ function automata.rules_validate(pname, rule_override)
 	if not destruct then rules.destruct = "false" 
 	else rules.destruct = destruct end
 	local sound = automata.get_player_setting(pname, "sound")
-	if not sound then rules.sound = "gong"
+	if not sound then rules.sound = "darkboom"
 	else rules.sound = sound end
 	--then validate fields common to 1D and 2D and importing 2D .LIF files (tab 4)
 	if tab == "1" or tab == "2" or tab == "4" then
@@ -1626,7 +1626,7 @@ function automata.show_rc_form(pname)
 	local sound = automata.get_player_setting(pname, "sound")
 	if not sound then sound_id = 1
 	else 
-		local idx = {gong=1,darkboom=2,bowls=3,warblast=4}
+		local idx = {gong=1,darkboom=2,bowls=3,warblast=4,crystal=5}
 		sound_id = idx[sound]
 	end
 	--set some formspec sections for re-use on all tabs
@@ -1641,7 +1641,7 @@ function automata.show_rc_form(pname)
 								"field[1,7;2,1;gens;Generations;"..minetest.formspec_escape(gens).."]" ..
 								"field[3,7;2,1;delay;Delay (ms);"..minetest.formspec_escape(delay).."]" ..
 								"label[8,7.4; Sound]"..
-								"dropdown[8,7.8;4,1;sound;gong,darkboom,bowls,warblast;"..sound_id.."]"
+								"dropdown[8,7.8;4,1;sound;gong,darkboom,bowls,warblast,crystal;"..sound_id.."]"
 	--1D,2D,and 3D
 	--make sure the inactive cell registry is not empty
 	local activate_section = 	"label[1,8.5;No inactive cells in map]"
