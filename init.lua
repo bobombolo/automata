@@ -872,12 +872,15 @@ function automata.grow(pattern_id, pname)
 	vm:update_map()
     --SOUND!
     local sound = rules.sound
-    --local soundpos = { x=(xmin+xmax)/2, y=(ymin+ymax)/2, z=(zmin+zmax)/2 }
-    local pitch1 = cell_count % 12
-    -- got this number from https://music.stackexchange.com/questions/49803/how-to-reference-or-calculate-the-percentage-pitch-change-between-two-notes
-    pitch1 = ( 1.0594630943592952645618252949463 ^ pitch1 ) / 2 -- divide by two to get an octave lower?
-    if birth_count > 0 then
-		minetest.sound_play({name = sound},{pitch = pitch1}, true)
+    if sound == "piano" then
+		minetest.sound_play({name = sound}, true)
+    else
+		local pitch1 = cell_count % 12
+		-- got this number from https://music.stackexchange.com/questions/49803/how-to-reference-or-calculate-the-percentage-pitch-change-between-two-notes
+		pitch1 = ( 1.0594630943592952645618252949463 ^ pitch1 ) / 2 -- divide by two to get an octave lower?
+		if birth_count > 0 then
+			minetest.sound_play({name = sound},{pitch = pitch1}, true)
+		end
 	end
 	--update pattern values
 	local timer = (os.clock() - t1) * 1000
@@ -1626,7 +1629,7 @@ function automata.show_rc_form(pname)
 	local sound = automata.get_player_setting(pname, "sound")
 	if not sound then sound_id = 2
 	else 
-		local idx = {gong=1,darkboom=2,bowls=3,warblast=4,crystal=5}
+		local idx = {gong=1,darkboom=2,bowls=3,warblast=4,crystal=5,piano=6}
 		sound_id = idx[sound]
 	end
 	--set some formspec sections for re-use on all tabs
@@ -1641,7 +1644,7 @@ function automata.show_rc_form(pname)
 								"field[1,7;2,1;gens;Generations;"..minetest.formspec_escape(gens).."]" ..
 								"field[3,7;2,1;delay;Delay (ms);"..minetest.formspec_escape(delay).."]" ..
 								"label[8,7.4; Sound]"..
-								"dropdown[8,7.8;4,1;sound;gong,darkboom,bowls,warblast,crystal;"..sound_id.."]"
+								"dropdown[8,7.8;4,1;sound;gong,darkboom,bowls,warblast,crystal,piano;"..sound_id.."]"
 	--1D,2D,and 3D
 	--make sure the inactive cell registry is not empty
 	local activate_section = 	"label[1,8.5;No inactive cells in map]"
