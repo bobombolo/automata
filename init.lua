@@ -1035,16 +1035,14 @@ function automata.rules_validate(pname, rule_override)
 	--regardless we validate the growth options common to 1D, 2D and 3D automata
 	--gens
 	local gens = automata.get_player_setting(pname, "gens")
-	if not tonumber(gens) then automata.show_popup(pname, "Generations must be between 1 and 1000-- you said: "..gens) return false
-	elseif gens == "" then rules.gens = 30; gens = 30
-	elseif tonumber(gens) > 0 and tonumber(gens) < 1001 then rules.gens = tonumber(gens)
-	else automata.show_popup(pname, "Generations must be between 1 and 1000-- you said: "..gens) return false end
+	if gens == "" then rules.gens = 30
+	elseif tonumber(gens) and tonumber(gens) > 0 and tonumber(gens) < 1001 then rules.gens = tonumber(gens)
+	else automata.show_popup(pname, "Generations must be an integer between 1 and 1000-- you said: "..gens) return false end
 	--delay
 	local delay = automata.get_player_setting(pname, "delay")
-	if not tonumber(delay) then automata.show_popup(pname, "Delay must be between 1 and 10000-- you said: "..delay) return false
-	elseif delay == "" then rules.delay = 0; delay = 0
-	elseif tonumber(delay) >= 0 and tonumber(delay) < 10001 then rules.delay = tonumber(delay)
-	else automata.show_popup(pname, "Delay must be between 1 and 10000-- you said: "..delay) return false end
+	if delay == "" then rules.delay = 0
+	elseif tonumber(delay) and tonumber(delay) >= 0 and tonumber(delay) < 10001 then rules.delay = tonumber(delay)
+	else automata.show_popup(pname, "Delay must be an integer between 0 and 10000-- you said: "..delay) return false end
 	--trail
 	local trail = automata.get_player_setting(pname, "trail")
     if not trail then rules.trail = "air" 
@@ -1064,9 +1062,10 @@ function automata.rules_validate(pname, rule_override)
 	if tab == "1" or tab == "2" or tab == "4" then
 		--grow_distance
 		local grow_distance = automata.get_player_setting(pname, "grow_distance")
-		if not grow_distance then rules.grow_distance = 0
-		elseif tonumber(grow_distance) then rules.grow_distance = tonumber(grow_distance) --@todo take modf()
-		else automata.show_popup(pname, "the grow distance needs to be an integer-- you said: "..grow_distance) return false end
+		if not grow_distance then rules.grow_distance = 1
+		elseif tonumber(grow_distance) and tonumber(grow_distance) >= -100 and tonumber(grow_distance) <= 100 then
+			rules.grow_distance = tonumber(grow_distance)
+		else automata.show_popup(pname, "Grow Distance needs to be an integer between -100 and 100\n-- you said: "..grow_distance) return false end
 		--grow_axis (for 2D implies the calculation plane, for 1D cannot be the same as "axis")
 		local grow_axis = automata.get_player_setting(pname, "grow_axis")
 		if not grow_axis then rules.grow_axis = "y" --with the dropdown on the form this default should never be used
