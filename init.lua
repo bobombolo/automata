@@ -9,6 +9,7 @@ automata = {}
 automata.patterns = {} -- master pattern list
 automata.grow_queue = {}
 automata.inactive_cells = {} -- automata:inactive nodes, activated with the remote
+automata.sound_handler = nil
 -- new cell that requires activation
 minetest.register_node("automata:inactive", {
 	description = "Programmable Automata",
@@ -871,15 +872,18 @@ function automata.grow(pattern_id, pname)
 	vm:write_to_map()
 	vm:update_map()
     --SOUND!
+    if automata.sound_handler then
+		minetest.sound_stop(automata.sound_handler)
+    end
     local sound = rules.sound
     if sound == "piano" then
-		minetest.sound_play({name = sound}, true)
+		automata.sound_handler = minetest.sound_play({name = sound})
     else
 		local pitch1 = cell_count % 12
 		-- got this number from https://music.stackexchange.com/questions/49803/how-to-reference-or-calculate-the-percentage-pitch-change-between-two-notes
 		pitch1 = ( 1.0594630943592952645618252949463 ^ pitch1 ) / 2 -- divide by two to get an octave lower?
 		if birth_count > 0 then
-			minetest.sound_play({name = sound},{pitch = pitch1}, true)
+			automata.sound_handler = minetest.sound_play({name = sound},{pitch = pitch1})
 		end
 	end
 	--update pattern values
@@ -1031,12 +1035,14 @@ function automata.rules_validate(pname, rule_override)
 	--regardless we validate the growth options common to 1D, 2D and 3D automata
 	--gens
 	local gens = automata.get_player_setting(pname, "gens")
-	if not gens then rules.gens = 100
+	if not tonumber(gens) then automata.show_popup(pname, "Generations must be between 1 and 1000-- you said: "..gens) return false
+	elseif gens == "" then rules.gens = 30; gens = 30
 	elseif tonumber(gens) > 0 and tonumber(gens) < 1001 then rules.gens = tonumber(gens)
 	else automata.show_popup(pname, "Generations must be between 1 and 1000-- you said: "..gens) return false end
 	--delay
 	local delay = automata.get_player_setting(pname, "delay")
-	if not delay then rules.delay = 0
+	if not tonumber(delay) then automata.show_popup(pname, "Delay must be between 1 and 10000-- you said: "..delay) return false
+	elseif delay == "" then rules.delay = 0; delay = 0
 	elseif tonumber(delay) >= 0 and tonumber(delay) < 10001 then rules.delay = tonumber(delay)
 	else automata.show_popup(pname, "Delay must be between 1 and 10000-- you said: "..delay) return false end
 	--trail
