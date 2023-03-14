@@ -1036,12 +1036,14 @@ function automata.rules_validate(pname, rule_override)
 	--gens
 	local gens = automata.get_player_setting(pname, "gens")
 	if gens == "" then rules.gens = 30
-	elseif tonumber(gens) and tonumber(gens) > 0 and tonumber(gens) < 1001 then rules.gens = tonumber(gens)
+	elseif tonumber(gens) and tonumber(gens) > 0 and tonumber(gens) < 1001 
+	and tonumber(gens) == math.floor(tonumber(gens)) then rules.gens = tonumber(gens)
 	else automata.show_popup(pname, "Generations must be an integer between 1 and 1000-- you said: "..gens) return false end
 	--delay
 	local delay = automata.get_player_setting(pname, "delay")
 	if delay == "" then rules.delay = 0
-	elseif tonumber(delay) and tonumber(delay) >= 0 and tonumber(delay) < 10001 then rules.delay = tonumber(delay)
+	elseif tonumber(delay) and tonumber(delay) >= 0 and tonumber(delay) < 10001 
+	and tonumber(delay) == math.floor(tonumber(delay)) then rules.delay = tonumber(delay)
 	else automata.show_popup(pname, "Delay must be an integer between 0 and 10000-- you said: "..delay) return false end
 	--trail
 	local trail = automata.get_player_setting(pname, "trail")
@@ -1063,7 +1065,8 @@ function automata.rules_validate(pname, rule_override)
 		--grow_distance
 		local grow_distance = automata.get_player_setting(pname, "grow_distance")
 		if not grow_distance then rules.grow_distance = 1
-		elseif tonumber(grow_distance) and tonumber(grow_distance) >= -100 and tonumber(grow_distance) <= 100 then
+		elseif tonumber(grow_distance) and tonumber(grow_distance) >= -100 and tonumber(grow_distance) <= 100 
+		and tonumber(grow_distance) == math.floor(tonumber(grow_distance)) then
 			rules.grow_distance = tonumber(grow_distance)
 		else automata.show_popup(pname, "Grow Distance needs to be an integer between -100 and 100\n-- you said: "..grow_distance) return false end
 		--grow_axis (for 2D implies the calculation plane, for 1D cannot be the same as "axis")
