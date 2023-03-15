@@ -876,7 +876,7 @@ function automata.grow(pattern_id, pname)
 		minetest.sound_stop(automata.sound_handler)
     end
     local sound = rules.sound
-    if sound == "piano" then
+    if sound == "piano" or sound == "bass" then
 		automata.sound_handler = minetest.sound_play({name = sound})
     else
 		local pitch1 = cell_count % 12
@@ -1638,7 +1638,7 @@ function automata.show_rc_form(pname)
 	local sound = automata.get_player_setting(pname, "sound")
 	if not sound then sound_id = 2
 	else 
-		local idx = {gong=1,darkboom=2,bowls=3,warblast=4,crystal=5,piano=6,autechre=7,oizo=8}
+		local idx = {gong=1,darkboom=2,bowls=3,warblast=4,crystal=5,piano=6,bass=7,autechre=8,oizo=9}
 		sound_id = idx[sound]
 	end
 	--set some formspec sections for re-use on all tabs
@@ -1653,7 +1653,7 @@ function automata.show_rc_form(pname)
 								"field[1,7;2,1;gens;Generations;"..minetest.formspec_escape(gens).."]" ..
 								"field[3,7;2,1;delay;Delay (ms);"..minetest.formspec_escape(delay).."]" ..
 								"label[8,7.4; Sound]"..
-								"dropdown[8,7.8;4,1;sound;gong,darkboom,bowls,warblast,crystal,piano,autechre,oizo;"..sound_id.."]"
+								"dropdown[8,7.8;4,1;sound;gong,darkboom,bowls,warblast,crystal,piano,bass,autechre,oizo;"..sound_id.."]"
 	--1D,2D,and 3D
 	--make sure the inactive cell registry is not empty
 	local activate_section = 	"label[1,8.5;No inactive cells in map]"
