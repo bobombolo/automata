@@ -1042,7 +1042,7 @@ function automata.rules_validate(pname, rule_override)
 	else automata.show_popup(pname, "Generations must be an integer between 1 and 1000-- you said: "..gens) return false end
 	--delay
 	local delay = automata.get_player_setting(pname, "delay")
-	if delay == "" then rules.delay = 0
+	if delay == "" or delay == false then rules.delay = 0
 	elseif tonumber(delay) and tonumber(delay) >= 0 and tonumber(delay) < 10001 
 	and tonumber(delay) == math.floor(tonumber(delay)) then rules.delay = tonumber(delay)
 	else automata.show_popup(pname, "Delay must be an integer between 0 and 10000-- you said: "..delay) return false end
